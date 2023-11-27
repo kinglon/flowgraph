@@ -4,5 +4,6 @@
         <file>qml/WindowBase.qml</file>
         <file>res/logo.ico</file>
         <file>res/logo.png</file>
+        <file>qml/ButtonBase.qml</file>
     </qresource>
 </RCC>
