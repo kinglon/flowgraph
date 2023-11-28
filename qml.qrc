@@ -5,5 +5,17 @@
         <file>res/logo.ico</file>
         <file>res/logo.png</file>
         <file>qml/ButtonBase.qml</file>
+        <file>res/add.png</file>
+        <file>qml/BorderImgButton.qml</file>
+        <file>res/add_button_bg_click.png</file>
+        <file>res/add_button_bg_disable.png</file>
+        <file>res/add_button_bg_hover.png</file>
+        <file>res/add_button_bg_normal.png</file>
+        <file>res/close_button.png</file>
+        <file>res/default_button_bg_click.png</file>
+        <file>res/default_button_bg_disable.png</file>
+        <file>res/default_button_bg_hover.png</file>
+        <file>res/default_button_bg_normal.png</file>
+        <file>res/minimize_button.png</file>
     </qresource>
 </RCC>

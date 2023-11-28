@@ -14,6 +14,8 @@ Rectangle {
 
     property Window window: null
 
+    property string title: "title"
+
     Column {
         width: parent.width-2*windowArea.border.width
         height: parent.height-windowArea.border.width
@@ -70,14 +72,18 @@ Rectangle {
                 anchors.leftMargin: 6
             }
 
-            Button {
+            ButtonBase {
                 id: minBtn
                 width: height
-                height: closeBtn.height
-                y: closeBtn.y
-                text: qsTr("一")
+                height: parent.height
+                topInset: 4
+                bottomInset: 4
+                leftInset: 4
+                rightInset: 4
                 anchors.right: closeBtn.left
                 anchors.rightMargin: 6
+                icon.source: "../res/minimize_button.png"
+
                 onClicked: {
                     if (window != null) {
                         window.showMinimized();
@@ -85,14 +91,17 @@ Rectangle {
                 }
             }
 
-            Button {
+            ButtonBase {
                 id: closeBtn
                 width: height
-                height: logo.height
-                y: (parent.height-height)/2
-                text: qsTr("X")
+                height: parent.height
+                topInset: 4
+                bottomInset: 4
+                leftInset: 4
+                rightInset: 4
                 anchors.right: parent.right
                 anchors.rightMargin: 6
+                icon.source: "../res/close_button.png"
                 onClicked: {
                     if (window != null) {
                         window.close();

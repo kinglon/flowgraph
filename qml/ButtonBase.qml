@@ -2,32 +2,57 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 
 Button {
-    width: 75
-    height: 50
-    text: "确定"
+    width: 100
+    height: 100
+    //text: "确定"
     font.styleName: "Bold"
     font.family: "Arial"
     font.bold: true
     font.pointSize: 16
     palette.buttonText: "#FFFFFF"
     display: AbstractButton.TextBesideIcon
-    
-    property int borderWidth: 0
+    hoverEnabled: true
+
+    property color bgNormalColor: "#2D3447"
+    property color bgClickColor: "#1E2330"
+    property color bgHoverColor: "#3C465F"
+    property color bgDisableColor: "#B4BECD"
 
     property color borderColor: "#ffffff"
+    property int borderWidth: 0
+    property int borderRadius: 10
+
+    function updateBackgroundColor() {
+        if (!enabled) {
+            solidBackground.color = bgDisableColor
+        } else {
+            if (down) {
+                solidBackground.color = bgClickColor
+            } else {
+                if (hovered) {
+                    solidBackground.color = bgHoverColor
+                } else {
+                    solidBackground.color = bgNormalColor
+                }
+            }
+        }
+    }
 
     background: Rectangle {
-        color: parent.down ? "#1E2330" : (parent.containsMouse ? "#3C465F" : "#2D3447")
+        id: solidBackground
+        x: parent.leftInset
+        y: parent.topInset
+        width: parent.width-parent.leftInset-parent.rightInset
+        height: parent.height-parent.topInset-parent.bottomInset
+        color: bgNormalColor
+        radius: borderRadius
         border.width: borderWidth
-        radius: 10
         border.color: borderColor
     }
 
-    MouseArea {
-        anchors.fill: parent
-        hoverEnabled: true
+    onDownChanged: { updateBackgroundColor(); }
 
-        onPressed: parent.down = true
-        onReleased: parent.down = false
-    }
+    onEnabledChanged: { updateBackgroundColor(); }
+
+    onHoveredChanged: { updateBackgroundColor(); }
 }
