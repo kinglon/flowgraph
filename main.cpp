@@ -9,6 +9,9 @@ int main(int argc, char *argv[])
 #endif
     QGuiApplication app(argc, argv);
 
+    app.setOrganizationName("Jeric");
+    app.setOrganizationDomain("jeric.com");
+
     QQmlApplicationEngine engine;
     const QUrl url(QStringLiteral("qrc:/qml/ManagerWindow.qml"));
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,

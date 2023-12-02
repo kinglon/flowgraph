@@ -16,6 +16,12 @@ Rectangle {
 
     property string title: "title"
 
+    // 是否有最小化按钮
+    property bool hasMinButton: true
+
+    // 是否有LOGO
+    property bool hasLogo: true
+
     Column {
         width: parent.width-2*windowArea.border.width
         height: parent.height-windowArea.border.width
@@ -50,6 +56,7 @@ Rectangle {
             // Logo
             Image {
                 id: logo
+                visible: hasLogo
                 width: 26
                 height: width
                 x: 6
@@ -60,10 +67,10 @@ Rectangle {
 
             // Title text
             Text {
-                id: titleText
+                id: titleText                
                 width: 300
                 height: parent.height
-                anchors.left: logo.right
+                anchors.left: hasLogo? logo.right : parent.left
                 leftPadding: 6
                 text: title
                 color: "white"
@@ -74,6 +81,7 @@ Rectangle {
 
             ButtonBase {
                 id: minBtn
+                visible: hasMinButton
                 width: height
                 height: parent.height
                 topInset: 4

@@ -46,8 +46,16 @@ Window {
                     }
 
                     onClicked: {
-                        var item = {isAddButton: false, content: '流程图名字', iconSource: '../res/logo.png'};
-                        gridModel.insert(gridModel.count-1, item);
+                        var addFlowWindowComponent = Qt.createComponent("AddFlowWindow.qml")
+                        if (addFlowWindowComponent.status === Component.Ready) {
+                            var addWindow = addFlowWindowComponent.createObject(managerWindow)
+                            addWindow.okClicked.connect(function() {
+                                var item = {isAddButton: false, content: addWindow.name, iconSource: addWindow.logoPath};
+                                gridModel.insert(gridModel.count-1, item);
+                            })
+                        } else {
+                            console.log("Error loading AddFlowWindow component:", addFlowWindowComponent.errorString());
+                        }
                     }
                 }
 

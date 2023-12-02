@@ -17,5 +17,7 @@
         <file>res/default_button_bg_hover.png</file>
         <file>res/default_button_bg_normal.png</file>
         <file>res/minimize_button.png</file>
+        <file>qml/AddFlowWindow.qml</file>
+        <file>res/template_image.png</file>
     </qresource>
 </RCC>
