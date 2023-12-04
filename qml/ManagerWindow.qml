@@ -1,6 +1,7 @@
-import QtQuick 2.15
+﻿import QtQuick 2.15
 import QtQuick.Window 2.15
 import QtQuick.Controls 2.15
+import Flow 1.0
 
 Window {
     id: managerWindow
@@ -50,8 +51,14 @@ Window {
                         if (addFlowWindowComponent.status === Component.Ready) {
                             var addWindow = addFlowWindowComponent.createObject(managerWindow)
                             addWindow.okClicked.connect(function() {
-                                var item = {isAddButton: false, content: addWindow.name, iconSource: addWindow.logoPath};
-                                gridModel.insert(gridModel.count-1, item);
+                                var item = {isAddButton: false, content: addWindow.name, iconSource: addWindow.logoPath}
+                                gridModel.insert(gridModel.count-1, item)
+
+                                var flowItem = flowItemComponent.createObject()
+                                flowItem.id = String(Math.floor(Date.now()/1000))
+                                flowItem.name = addWindow.name
+                                flowItem.logoFilePath = addWindow.logoPath
+                                FlowManager.addFlowItem(flowItem)
                             })
                         } else {
                             console.log("Error loading AddFlowWindow component:", addFlowWindowComponent.errorString());
@@ -103,6 +110,21 @@ Window {
                     iconSource: ''
                 }
             }
+            Component.onCompleted: {
+                var flows = FlowManager.flows;
+                for (var index in flows) {
+                    var flow = flows[index]
+                    var item = {isAddButton: false, content: flow.name, iconSource: flow.logoFilePath};
+                    gridModel.insert(gridModel.count-1, item);
+                }
+            }
+        }
+    }
+
+    Component {
+        id: flowItemComponent
+        FlowItem {
+            //
         }
     }
 }
