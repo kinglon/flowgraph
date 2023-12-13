@@ -22,6 +22,9 @@ Rectangle {
     // 是否有LOGO
     property bool hasLogo: true
 
+    // ContentArea
+    property alias contentArea: contentArea
+
     Column {
         width: parent.width-2*windowArea.border.width
         height: parent.height-windowArea.border.width
@@ -94,7 +97,7 @@ Rectangle {
 
                 onClicked: {
                     if (window != null) {
-                        window.showMinimized();
+                        window.visibility = Window.Minimized
                     }
                 }
             }
@@ -124,12 +127,6 @@ Rectangle {
             width: parent.width
             height: parent.height - titleBar.height
             color: "#B4BECD"
-
-            Component.onCompleted: {
-                if (content) {
-                    content.parent = contentArea
-                }
-            }
         }
     }
 }

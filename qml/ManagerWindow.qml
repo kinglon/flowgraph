@@ -14,10 +14,11 @@ Window {
     WindowBase {        
         window: managerWindow
         title: managerWindow.title
-        content: GridView {
+        GridView {
             property int columnCount: 8
 
             id: gridView
+            parent: contentArea
             anchors.fill: parent
             clip: true
             cellWidth: width/columnCount
