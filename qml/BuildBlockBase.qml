@@ -2,6 +2,7 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 
 Rectangle {
+    id: buildBlockBase
     width: 150
     height: 200
     color: "transparent"
@@ -16,6 +17,11 @@ Rectangle {
 
     property alias lowerContent: lowerContent
 
+    property alias leftPin: leftPinCtrl
+
+    property alias rightPin: rightPinCtrl
+
+
     // 背景
     Rectangle {
         id: background
@@ -28,23 +34,53 @@ Rectangle {
         radius: 10
     }
 
+    // 鼠标拖动
+    MouseArea {
+        anchors.fill: parent
+        acceptedButtons: Qt.LeftButton|Qt.RightButton
+        property point clickPos: Qt.point(1,1)
+        onPressed: {
+            if (mouse.button == Qt.LeftButton) {
+                clickPos  = Qt.point(mouse.x,mouse.y);
+            }
+        }
+
+        onPositionChanged: {
+            if (mouse.buttons == Qt.LeftButton) {
+                var delta = Qt.point(mouse.x-clickPos.x, mouse.y-clickPos.y);
+                buildBlockBase.x += delta.x;
+                buildBlockBase.y += delta.y;
+                if (buildBlockBase.x < 0) {
+                    buildBlockBase.x = 0
+                }
+                if (buildBlockBase.y < 0) {
+                    buildBlockBase.y = 0
+                }
+            }
+        }
+    }
+
     // 左边黑点
     Rectangle {
+        id: leftPinCtrl
         anchors.verticalCenter: parent.verticalCenter
         width: 7
         height: 7
         radius: width / 2
         color: "#2D3447"
+        property point pos: Qt.point(x+width/2, y+height/2)
     }
 
     // 右边黑点
     Rectangle {
+        id: rightPinCtrl
         anchors.right: parent.right
         anchors.verticalCenter: parent.verticalCenter
         width: 7
         height: 7
         radius: width / 2
         color: "#2D3447"
+        property point pos: Qt.point(x+width/2, y+height/2)
     }
 
     // 中线
