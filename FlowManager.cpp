@@ -8,6 +8,8 @@
 #include <QJsonObject>
 #include <shlwapi.h>
 #include <QFileInfo>
+#include <QUuid>
+#include <QDir>
 
 const std::wstring flowFolder(L"flows");
 const std::wstring flowConfFileName(L"flowconf");
@@ -44,9 +46,34 @@ FlowManager::~FlowManager()
     m_flows.clear();
 }
 
-void FlowManager::addFlowItem(FlowItem* flowItem)
+QString FlowManager::getUuid()
 {
-    // remove the file:// of logo path
+    // Generate a UUID
+    QUuid uuid = QUuid::createUuid();
+
+    // Convert the UUID to a string
+    QString uuidString = uuid.toString();
+
+    return uuidString;
+}
+
+bool FlowManager::getFlowItem(const QString& id, FlowItem* flowItem)
+{
+    for (int i=0; i<m_flows.size(); i++)
+    {
+        if (m_flows[i]->id() == id)
+        {
+            *flowItem = *m_flows[i];
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool FlowManager::addFlowItem(FlowItem* flowItem)
+{
+    // remove the protocal: file://
     QString logoFilePath = flowItem->logoFilePath();
     QUrl url(logoFilePath);
     if (url.isLocalFile())
@@ -56,7 +83,7 @@ void FlowManager::addFlowItem(FlowItem* flowItem)
 
     // copy logo file
     QFileInfo fileInfo(logoFilePath);
-    QString logoFileName = fileInfo.fileName();
+    QString logoFileName = getUuid()+'.'+fileInfo.suffix();
     QString flowDataPath = getFlowDataPath(flowItem->id());
     QString flowLogoFilePath = flowDataPath + logoFileName;
     if (!QFile::copy(logoFilePath, flowLogoFilePath))
@@ -64,7 +91,7 @@ void FlowManager::addFlowItem(FlowItem* flowItem)
         LOG_ERROR(L"failed to copy logo file from %s to %s",
                   flowItem->logoFilePath().toStdWString().c_str(),
                   flowLogoFilePath.toStdWString().c_str());
-        return;
+        return false;
     }
 
     // create config file
@@ -86,7 +113,7 @@ void FlowManager::addFlowItem(FlowItem* flowItem)
     if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
     {
         LOG_ERROR(L"failed to create the flow configure file : %s", flowConfFilePath.toStdWString().c_str());
-        return;
+        return false;
     }
     file.write(base64Data);
     file.close();
@@ -99,6 +126,8 @@ void FlowManager::addFlowItem(FlowItem* flowItem)
     QVector<QString> flowIds = CSettingManager::GetInstance()->GetFlows();
     flowIds.append(flowItem->id());
     CSettingManager::GetInstance()->SetFlows(flowIds);
+
+    return true;
 }
 
 
@@ -113,18 +142,65 @@ void FlowManager::deleteFlowItem(const QString& id)
             break;
         }
     }
+
+    // 删除资源文件目录
+    QString flowDataPath = getFlowDataPath(id);
+    deleteDirectory(flowDataPath);
+
+    // save to config
+    QVector<QString> flowIds = CSettingManager::GetInstance()->GetFlows();
+    flowIds.removeAll(id);
+    CSettingManager::GetInstance()->SetFlows(flowIds);
 }
 
-void FlowManager::updateFlowItem(FlowItem* flowItem)
+void FlowManager::deleteDirectory(const QString& dirPath)
 {
-    for (int i=0; i<m_flows.size(); i++)
+    QDir dir(dirPath);
+
+    // Check if the directory exists
+    if (!dir.exists())
+        return;
+
+    // Get the list of entries in the directory
+    QStringList entries = dir.entryList(QDir::NoDotAndDotDot | QDir::Files | QDir::Dirs | QDir::Hidden | QDir::System);
+
+    // Iterate over the entries
+    foreach (QString entry, entries)
     {
-        if (m_flows[i]->id() == flowItem->id())
+        QFileInfo fileInfo(dirPath + QDir::separator() + entry);
+
+        // Recursively delete subdirectories
+        if (fileInfo.isDir())
         {
-            *m_flows[i] = *flowItem;
-            break;
+            deleteDirectory(fileInfo.filePath());
+        }
+        // Delete files
+        else
+        {
+            QFile::remove(fileInfo.filePath());
         }
     }
+
+    // Remove the empty directory
+    dir.rmdir(dirPath);
+}
+
+QString FlowManager::copyFlowItem(const QString& id)
+{
+    FlowItem flowItem;
+    if (!getFlowItem(id, &flowItem)) {
+        return "";
+    }
+
+    flowItem.setId(getUuid());
+    flowItem.setName(flowItem.name()+"_2");
+    addFlowItem(&flowItem);
+    return flowItem.id();
+}
+
+void FlowManager::packageFlowItem(const QString& id)
+{
+    // todo by yejinlong, packageFlowItem
 }
 
 QQmlListProperty<FlowItem> FlowManager::flows()

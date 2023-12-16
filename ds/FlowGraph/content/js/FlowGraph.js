@@ -7,6 +7,7 @@ var FileItem = {
 };
 
 var SubmitConditionItem = {
+    groupName: "",
     suffix: "",
     sizeMin: 1,
     sizeMax: 2,
@@ -22,12 +23,10 @@ var BuildBlockItem = {
     text: "",
     studyFiles: [],
     submitFiles: [],
-    finishCondition: {
-        selIndex: 0,
-        groups:[]
-    },
-    finishTimeLength: 3600,
-    remainTimeLength: 3600
+    finishCondition: [],
+    finishConditionGroup: "",
+    finishTimeLength: 7200,
+    remainTimeLength: 7200
 };
 
 // BuildBlockItem array
@@ -40,7 +39,15 @@ function loadFlowGraph(flowGraphId) {
 
 // save flowgraph
 function saveFlowGraph(flowGraphId) {
-    //
+    // todo by yejinlong, saveFlowGraph
+}
+
+// create build buildBlock
+function createBuildBlock(type) {
+    var buildBlock = new BuildBlockItem()
+    buildBlock.uuid = Qt.createUuid()
+    buildBlock.type = type
+    return buildBlock
 }
 
 

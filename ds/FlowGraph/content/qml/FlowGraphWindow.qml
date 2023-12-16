@@ -46,7 +46,9 @@ Window {
                         text: "添加备注模块"
                         font.pointSize: contextMenu.fontSize
                         onTriggered: {
-                            console.log("添加备注模块")
+                            var buildBlockData = buildBlockManager.createBuildBlock("12345","text")
+                            buildBlockData.text = "12345"
+                            var editWindow = buildBlockEditWindowComponent.createObject(flowGraphWindow, {buildBlockData=buildBlockData})
                         }
                     }
                     MenuItem {
@@ -63,9 +65,20 @@ Window {
                             console.log("添加计时模块")
                         }
                     }
+
+                    Component {
+                        id: buildBlockEditWindowComponent
+                        BuildBlockEditWindow {
+
+                        }
+                    }
                 }
             }            
         }
+    }
+
+    BuildBlockManager {
+        id: buildBlockManager
     }
 
     onVisibilityChanged: {

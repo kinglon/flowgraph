@@ -33,6 +33,7 @@ private:
 
     QString m_name;
 
+    // 带有协议 file:///
     QString m_logoFilePath;
 };
 
@@ -48,11 +49,17 @@ public:
     ~FlowManager();
 
 public:
-    Q_INVOKABLE void addFlowItem(FlowItem* flowItem);
+    Q_INVOKABLE QString getUuid();
+
+    Q_INVOKABLE bool getFlowItem(const QString& id, FlowItem* flowItem);
+
+    Q_INVOKABLE bool addFlowItem(FlowItem* flowItem);
 
     Q_INVOKABLE void deleteFlowItem(const QString& id);
 
-    Q_INVOKABLE void updateFlowItem(FlowItem* flowItem);
+    Q_INVOKABLE QString copyFlowItem(const QString& id);
+
+    Q_INVOKABLE void packageFlowItem(const QString& id);
 
     QQmlListProperty<FlowItem> flows();
 
@@ -62,6 +69,8 @@ private:
     FlowItem* loadFlow(const QString& flowId);
 
     QString getFlowDataPath(const QString& flowId);
+
+    void deleteDirectory(const QString& dirPath);
 
 private:
     QList<FlowItem*> m_flows;

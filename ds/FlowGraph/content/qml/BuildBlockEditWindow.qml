@@ -6,9 +6,12 @@ Window {
     id: buildBlockEditWindow
     flags: Qt.Window|Qt.FramelessWindowHint
     visible: true
+    modality: Qt.WindowModal
     title: "添加模块"
     width: 800
     height: 600
+
+    property var buildBlockData
 
     // 备注模块的文本
     property string text: "备注模块"
@@ -84,7 +87,8 @@ Window {
                 TextEdit {
                     id: textEdit
                     color: "white"
-                    text: buildBlockEditWindow.text
+                    //text: buildBlockEditWindow.text
+                    text: buildBlockEditWindow.buildBlockData?buildBlockEditWindow.buildBlockData.text:""
                     font.pointSize: 12
                     textMargin: 5
                 }

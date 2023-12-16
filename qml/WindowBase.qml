@@ -24,6 +24,8 @@ Rectangle {
 
     // ContentArea
     property alias contentArea: contentArea
+    
+    property color bgColor: "#B4BECD"
 
     Column {
         width: parent.width-2*windowArea.border.width
@@ -126,7 +128,7 @@ Rectangle {
             id: contentArea
             width: parent.width
             height: parent.height - titleBar.height
-            color: "#B4BECD"
+            color: windowArea.bgColor
         }
     }
 }
