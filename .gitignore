@@ -63,5 +63,6 @@ ds/FlowGraph/content/*
 !ds/FlowGraph/content/qml/
 !ds/FlowGraph/content/res/
 
-doc/
+doc/*
+!doc/flowgraph.json
 *.bat

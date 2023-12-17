@@ -19,19 +19,15 @@
         <file>res/minimize_button.png</file>
         <file>qml/AddFlowWindow.qml</file>
         <file>res/template_image.png</file>
-        <file>qml/AddBuildBlock.qml</file>
         <file>qml/ArrowLine.qml</file>
         <file>qml/BasicBuildBlock.qml</file>
         <file>qml/BuildBlockBase.qml</file>
         <file>qml/BuildBlockConnection.qml</file>
-        <file>qml/BuildBlockData.qml</file>
         <file>qml/BuildBlockEditWindow.qml</file>
         <file>qml/BuildBlockManager.qml</file>
         <file>qml/FileItemData.qml</file>
         <file>qml/FileThumb.qml</file>
         <file>qml/FlowGraphWindow.qml</file>
-        <file>qml/OkBuildBlock.qml</file>
-        <file>qml/SubmitConditionData.qml</file>
         <file>qml/TextBuildBlock.qml</file>
         <file>qml/TimerBuildBlock.qml</file>
         <file>res/flow_graph_window_bg.png</file>

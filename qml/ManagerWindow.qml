@@ -29,9 +29,59 @@ Window {
                 required property string content
                 required property string iconSource
 
+                id: gridItem
                 width: gridView.cellWidth
                 height: gridView.cellHeight
 
+                MouseArea {
+                    anchors.fill: parent
+                    acceptedButtons: Qt.RightButton
+                    onReleased: {
+                        if (gridItem.isAddButton) {
+                            return
+                        }
+
+                        if (mouse.button === Qt.RightButton) {
+                            contextMenu.popup()
+                        }
+                    }
+
+                    Menu {
+                        id: contextMenu
+                        width: 60
+
+                        property int fontSize: 15
+                        MenuItem {
+                            text: "打包"
+                            font.pointSize: contextMenu.fontSize
+                            onTriggered: {
+                                FlowManager.packageFlowItem(flowId)
+                                // todo by yejinlong, 等待提示
+                            }
+                        }
+                        MenuItem {
+                            text: "复制"
+                            font.pointSize: contextMenu.fontSize
+                            onTriggered: {
+                                var newFlowId = FlowManager.copyFlowItem(flowId)
+                                var flowItem = flowItemComponent.createObject()
+                                if (FlowManager.getFlowItem(newFlowId, flowItem)) {
+                                    gridModel.addFlowItem(flowItem)
+                                }
+                            }
+                        }
+                        MenuItem {
+                            text: "删除"
+                            font.pointSize: contextMenu.fontSize
+                            onTriggered: {
+                                FlowManager.deleteFlowItem(flowId)
+                                gridModel.deleteFlowItem(flowId)
+                            }
+                        }
+                    }
+                }
+
+                // 添加按钮
                 BorderImgButton {
                     visible: isAddButton
                     anchors.fill: parent
@@ -64,6 +114,7 @@ Window {
                     }
                 }
 
+                // 流程图缩略图
                 BorderImgButton {
                     visible: !isAddButton
                     anchors.fill: parent
@@ -97,49 +148,10 @@ Window {
                             verticalAlignment: Text.AlignTop
                         }
                     }
-                }
-
-                MouseArea {
-                    anchors.fill: parent
-                    acceptedButtons: Qt.RightButton
-                    onReleased: {
-                        if (mouse.button === Qt.RightButton) {
-                            contextMenu.popup()
-                        }
-                    }
-
-                    Menu {
-                        id: contextMenu
-                        width: 150
-
-                        property int fontSize: 15
-                        MenuItem {
-                            text: "打包"
-                            font.pointSize: contextMenu.fontSize
-                            onTriggered: {
-                                FlowManager.packageFlowItem(flowId)
-                                // todo by yejinlong, 等待提示
-                            }
-                        }
-                        MenuItem {
-                            text: "复制"
-                            font.pointSize: contextMenu.fontSize
-                            onTriggered: {
-                                var newFlowId = FlowManager.copyFlowItem(flowId)
-                                var flowItem = flowItemComponent.createObject()
-                                if (FlowManager.getFlowItem(newFlowId, flowItem)) {
-                                    gridModel.addFlowItem(flowItem)
-                                }
-                            }
-                        }
-                        MenuItem {
-                            text: "删除"
-                            font.pointSize: contextMenu.fontSize
-                            onTriggered: {
-                                FlowManager.deleteFlowItem(flowId)
-                                gridModel.deleteFlowItem(flowId)
-                            }
-                        }
+                    onClicked: {
+                        managerWindow.hide()
+                        var params = {editable: true, flowId: gridItem.flowId, managerWindow: managerWindow}
+                        flowGraphWindowComponent.createObject(null, params)
                     }
                 }
             }
@@ -182,15 +194,16 @@ Window {
 
     Component {
         id: flowItemComponent
-        FlowItem {
-            //
-        }
+        FlowItem {}
     }
 
     Component {
         id: addFlowWindowComponent
-        AddFlowWindow {
-            //
-        }
+        AddFlowWindow {}
+    }
+
+    Component {
+        id: flowGraphWindowComponent
+        FlowGraphWindow {}
     }
 }

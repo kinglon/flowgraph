@@ -1,4 +1,4 @@
-import QtQuick 2.15
+﻿import QtQuick 2.15
 import QtQuick.Controls 2.15
 
 Rectangle {
@@ -6,6 +6,7 @@ Rectangle {
     width: 150
     height: 200
     color: "transparent"
+    enabled: true
 
     property string uuid: ""
 

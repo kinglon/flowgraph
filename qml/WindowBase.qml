@@ -1,4 +1,4 @@
-import QtQuick 2.15
+﻿import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Window 2.15
@@ -129,6 +129,20 @@ Rectangle {
             width: parent.width
             height: parent.height - titleBar.height
             color: windowArea.bgColor
+        }
+    }
+
+    Component.onCompleted: {
+        // 居中显示窗口在屏幕上
+        if (windowArea.window != null) {
+            windowArea.window.x = (Screen.desktopAvailableWidth-windowArea.window.width)/2
+            if (windowArea.window.x < 0) {
+                windowArea.window.x = 0
+            }
+            windowArea.window.y = (Screen.desktopAvailableHeight-windowArea.window.height)/2
+            if (windowArea.window.y < 0) {
+                windowArea.window.y = 0
+            }
         }
     }
 }

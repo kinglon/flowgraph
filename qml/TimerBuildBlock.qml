@@ -1,17 +1,12 @@
-import QtQuick 2.15
+﻿import QtQuick 2.15
 import QtQuick.Controls 2.15
 
 BasicBuildBlock {
     id: basicBuildBlock
-
     property int timerCtrlWidth: 30
-
     property string hour: "00"
-
     property string minute: "12"
-
     property string second: "34"
-
     initWidth: 130
 
     background.width: background.parent.width - timerCtrlWidth + 5

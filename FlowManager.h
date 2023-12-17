@@ -2,6 +2,8 @@
 #define CFLOWMANAGER_H
 
 #include <QObject>
+#include <QJsonObject>
+#include <QJsonArray>
 #include <qqml.h>
 
 class FlowItem : public QObject
@@ -49,6 +51,8 @@ public:
     ~FlowManager();
 
 public:
+    QQmlListProperty<FlowItem> flows();
+
     Q_INVOKABLE QString getUuid();
 
     Q_INVOKABLE bool getFlowItem(const QString& id, FlowItem* flowItem);
@@ -61,12 +65,17 @@ public:
 
     Q_INVOKABLE void packageFlowItem(const QString& id);
 
-    QQmlListProperty<FlowItem> flows();
+    Q_INVOKABLE QString getBuildBlocks(const QString& flowId);
+
+    Q_INVOKABLE void setBuildBlocks(const QString& flowId, QString buildBlocks);
+
 
 private:
     void loadFlows();
 
-    FlowItem* loadFlow(const QString& flowId);
+    void loadFlow(const QString& flowId);
+
+    void saveFlowConfigure(FlowItem* flowItem);
 
     QString getFlowDataPath(const QString& flowId);
 
@@ -74,6 +83,8 @@ private:
 
 private:
     QList<FlowItem*> m_flows;
+
+    QMap<QString, QJsonArray> m_flowId2BuildBlocks;
 };
 
 #endif // CFLOWMANAGER_H

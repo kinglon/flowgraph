@@ -1,0 +1,43 @@
+{
+    "id": "",
+    "name": "",
+    "logo": "文件名在流程图数据目录下，如1.png",
+    "buildBlocks": [
+        {
+            "uuid": "123456677",
+            "x": 10,
+            "y": 20,
+            "type": "text|basic|timer",
+            "last": ["12144343434"],
+            "next": "1231231231",
+            "finish": false,
+            "text": "text类型的文本",
+            "studyFiles": [
+                {
+                    "type": "image|video",
+                    "coverImage": "../res/template.png",
+                    "filePath": "绝对路径，不带file://协议"
+                }
+            ],
+            "submitFiles": [
+                {
+                    "type": "image|video",
+                    "coverImage": "../res/template.png",
+                    "filePath": "绝对路径，不带file://协议"
+                }
+            ],
+            "finishCondition": [
+                {
+                    "groupName":"",
+                    "suffix": "png",
+                    "sizeMin": 1
+                    "sizeMax": 2
+                    "count": 3
+                }
+            ],
+            "finishConditionGroup":"",
+            "finishTimeLength": 3600,
+            "remainTimeLength": 2400
+        }
+    ]
+}

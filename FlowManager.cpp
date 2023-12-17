@@ -94,35 +94,12 @@ bool FlowManager::addFlowItem(FlowItem* flowItem)
         return false;
     }
 
-    // create config file
-    QJsonObject root;
-    root["id"] = flowItem->id();
-    root["name"] = flowItem->name();
-    root["logo"] = logoFileName;
-    QJsonDocument jsonDocument(root);
-    QByteArray jsonData = jsonDocument.toJson(QJsonDocument::Indented);
-    QByteArray base64Data = jsonData.toBase64();
-    for (int i = 0; i < base64Data.size()/2; ++i)
-    {
-        char temp = base64Data[i];
-        base64Data[i] = base64Data[base64Data.size() - 1 - i];
-        base64Data[base64Data.size() - 1 - i] = temp;
-    }
-    QString flowConfFilePath = flowDataPath + QString::fromStdWString(flowConfFileName);
-    QFile file(flowConfFilePath);
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
-    {
-        LOG_ERROR(L"failed to create the flow configure file : %s", flowConfFilePath.toStdWString().c_str());
-        return false;
-    }
-    file.write(base64Data);
-    file.close();
-
     FlowItem* item = new FlowItem(*flowItem);
     item->setLogoFilePath(QString("file:///")+flowLogoFilePath);
     m_flows.append(item);
+    saveFlowConfigure(item);
 
-    // save to config
+    // save to setting config
     QVector<QString> flowIds = CSettingManager::GetInstance()->GetFlows();
     flowIds.append(flowItem->id());
     CSettingManager::GetInstance()->SetFlows(flowIds);
@@ -142,6 +119,8 @@ void FlowManager::deleteFlowItem(const QString& id)
             break;
         }
     }
+
+    m_flowId2BuildBlocks.remove(id);
 
     // 删除资源文件目录
     QString flowDataPath = getFlowDataPath(id);
@@ -201,6 +180,7 @@ QString FlowManager::copyFlowItem(const QString& id)
 void FlowManager::packageFlowItem(const QString& id)
 {
     // todo by yejinlong, packageFlowItem
+    (void)id;
 }
 
 QQmlListProperty<FlowItem> FlowManager::flows()
@@ -213,22 +193,18 @@ void FlowManager::loadFlows()
     QVector<QString> flowIds = CSettingManager::GetInstance()->GetFlows();
     for (int i=0; i<flowIds.size(); i++)
     {
-        FlowItem* flowItem = loadFlow(flowIds[i]);
-        if (flowItem)
-        {
-            m_flows.append(flowItem);
-        }
+        loadFlow(flowIds[i]);
     }
 }
 
-FlowItem* FlowManager::loadFlow(const QString& flowId)
+void FlowManager::loadFlow(const QString& flowId)
 {
     QString flowDataPath = getFlowDataPath(flowId);
     QString flowConfFilePath = flowDataPath + QString::fromStdWString(flowConfFileName);
     QFile file(flowConfFilePath);
     if (!file.open(QIODevice::ReadOnly)) {
         LOG_ERROR(L"failed to open the flow config file: %s", flowConfFilePath.toStdWString().c_str());
-        return nullptr;
+        return;
     }
     QByteArray binaryData = file.readAll();
     file.close();
@@ -244,7 +220,7 @@ FlowItem* FlowManager::loadFlow(const QString& flowId)
     if (jsonDocument.isNull())
     {
         LOG_ERROR(L"failed to parse the flow config file");
-        return nullptr;
+        return;
     }
     QJsonObject root = jsonDocument.object();
 
@@ -253,7 +229,83 @@ FlowItem* FlowManager::loadFlow(const QString& flowId)
     item->setName(root["name"].toString());
     QString logoFilePath = QString("file:///") + getFlowDataPath(flowId) + root["logo"].toString();
     item->setLogoFilePath(logoFilePath);
-    return item;
+    m_flows.append(item);
+
+    if (root.contains("buildBlocks"))
+    {
+        m_flowId2BuildBlocks[item->id()] = root["buildBlocks"].toArray();
+    }
+    else
+    {
+        m_flowId2BuildBlocks[item->id()] = QJsonArray();
+    }
+}
+
+void FlowManager::saveFlowConfigure(FlowItem* flowItem)
+{
+    QJsonObject root;
+    root["id"] = flowItem->id();
+    root["name"] = flowItem->name();
+
+    // 只存文件名
+    QString logoFilePath = flowItem->logoFilePath();
+    QFileInfo fileInfo(logoFilePath);
+    QString fileName = fileInfo.fileName();
+    root["logo"] = fileName;
+    if (m_flowId2BuildBlocks.contains(flowItem->id()))
+    {
+        root["buildBlocks"] = m_flowId2BuildBlocks[flowItem->id()];
+    }
+
+    QJsonDocument jsonDocument(root);
+    QByteArray jsonData = jsonDocument.toJson(QJsonDocument::Indented);
+    QByteArray base64Data = jsonData.toBase64();
+    for (int i = 0; i < base64Data.size()/2; ++i)
+    {
+        char temp = base64Data[i];
+        base64Data[i] = base64Data[base64Data.size() - 1 - i];
+        base64Data[base64Data.size() - 1 - i] = temp;
+    }
+    QString flowDataPath = getFlowDataPath(flowItem->id());
+    QString flowConfFilePath = flowDataPath + QString::fromStdWString(flowConfFileName);
+    QFile file(flowConfFilePath);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+    {
+        LOG_ERROR(L"failed to create the flow configure file : %s", flowConfFilePath.toStdWString().c_str());
+        return;
+    }
+    file.write(base64Data);
+    file.close();
+}
+
+QString FlowManager::getBuildBlocks(const QString& flowId)
+{
+    if (m_flowId2BuildBlocks.contains(flowId))
+    {
+        QJsonDocument jsonDoc(m_flowId2BuildBlocks[flowId]);
+        QString jsonString = jsonDoc.toJson(QJsonDocument::Compact);
+        return jsonString;
+    }
+    else
+    {
+        QJsonArray emptyArray;
+        QJsonDocument jsonDoc(emptyArray);
+        QString jsonString = jsonDoc.toJson(QJsonDocument::Compact);
+        return jsonString;
+    }
+}
+
+void FlowManager::setBuildBlocks(const QString& flowId, QString buildBlocks)
+{
+    QJsonDocument jsonDoc = QJsonDocument::fromJson(buildBlocks.toUtf8());
+    QJsonArray jsonArray = jsonDoc.array();
+    m_flowId2BuildBlocks[flowId] = jsonArray;
+
+    FlowItem flowItem;
+    if (getFlowItem(flowId, &flowItem))
+    {
+        saveFlowConfigure(&flowItem);
+    }
 }
 
 QString FlowManager::getFlowDataPath(const QString& flowId)
