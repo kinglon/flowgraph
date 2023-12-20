@@ -1,6 +1,7 @@
 ﻿import QtQuick 2.15
 import QtQuick.Window 2.15
 import QtQuick.Controls 2.15
+import QtQuick.Dialogs 1.3
 
 Window {
     id: buildBlockEditWindow
@@ -14,8 +15,115 @@ Window {
     // 模块JSON对象
     property var buildBlockData
 
+    property BuildBlockManager buildBlockManager
+
     // 按下确定按钮
     signal okClicked()
+
+    Component.onCompleted: {
+        if (buildBlockData.type === "text") {
+            fileListView.enabled = false
+            textEdit.text = buildBlockData.text
+            addFileButton.visible = false
+            addConditionButton.visible = false
+            timeLengthCtrl.visible = false
+            submitConditionListView.enabled = false
+        } else {
+            textEdit.enabled = false
+            buildBlockData.studyFiles.forEach(function(filePath) {
+                var absolutePath = buildBlockManager.toAbsolutePath(filePath)
+                buildBlockEditWindow.addFile(absolutePath)
+            })
+            buildBlockData.finishCondition.forEach(function(item) {
+                submitConditionModel.append(item)
+            })
+
+            if (buildBlockData.type === "timer") {
+                timeLengthTextEdit.text = buildBlockData.finishTimeLength.toString()
+            } else {
+                timeLengthCtrl.visible = false
+            }
+        }
+    }
+
+    function checkInputData() {
+        // todo by yejinlong, 提示用户
+        if (buildBlockData.type === "text") {
+            if (textEdit.text.length === 0) {
+                return false
+            }
+        } else {
+            if (fileListModel.count === 0) {
+                return false
+            }
+
+            for (var i=0; i<submitConditionModel.count; i++) {
+                var item = submitConditionModel.get(i)
+                if (item.groupName.length === 0 ||
+                        item.suffix.length === 0 ||
+                        item.sizeMin > item.sizeMax ||
+                        item.count === 0) {
+                    return false
+                }
+            }
+
+            if (buildBlockData.type === "timer") {
+                if (timeLengthTextEdit.text.length === 0) {
+                    return false
+                }
+            }
+        }
+
+        return true
+    }
+
+    function updateBuildBlockData() {
+        if (buildBlockData.type === "text") {
+            buildBlockData.text = textEdit.text
+        } else {
+            buildBlockData.studyFiles = []
+            for (var i=0; i<fileListModel.count; i++) {
+                var studyFile = fileListModel.get(i).filePath.split('\\').pop()
+                buildBlockData.studyFiles.push(studyFile)
+            }
+
+            buildBlockData.finishCondition = []
+            for (i=0; i<submitConditionModel.count; i++) {
+                buildBlockData.finishCondition.push(submitConditionModel.get(i))
+            }
+
+            buildBlockData.finishTimeLength = parseInt(timeLengthTextEdit.text)
+            buildBlockData.remainTimeLength = finishTimeLength
+        }
+    }
+
+    function selectFile() {
+        var fileDialog = fileDialogComponent.createObject(buildBlockEditWindow)
+        fileDialog.open()
+    }
+
+    // filePath绝对路径
+    function addFile(filePath) {
+        var extension = utility.getFileExtension(filePath)
+        var icon = ""
+        if (utility.isImageFile(extension)) {
+            icon = filePath
+        } else if (utility.isVideoFile(extension)) {
+            icon = "../res/default_video_cover.png"
+        }
+        fileListModel.append({"icon":icon, "filePath":filePath})
+    }
+
+    function addCondition() {
+        var item = {
+            groupName: "",
+            suffix: "png",
+            sizeMin: 0, // 单位MB
+            sizeMax: 5,
+            count: 1
+        }
+        submitConditionModel.append(item)
+    }
 
     WindowBase {
         id: windowBase
@@ -43,8 +151,7 @@ Window {
                 delegate: FileThumb {
                     width: height
                     height: fileListView.height
-                    type: model.type
-                    coverImage: model.coverImage
+                    icon: model.icon
                     filePath: model.filePath
                 }
             }
@@ -75,7 +182,7 @@ Window {
                     anchors.bottomMargin: 6
                     icon.source: "../res/add.png"
                     onClicked: {
-                        console.log("add file")
+                        buildBlockEditWindow.selectFile()
                     }
                 }
 
@@ -90,7 +197,7 @@ Window {
                     anchors.bottomMargin: 6
                     icon.source: "../res/add.png"
                     onClicked: {
-                        console.log("add condition")
+                        buildBlockEditWindow.addCondition()
                     }
                 }
             }
@@ -101,7 +208,7 @@ Window {
                 topPadding: 10
                 bottomPadding: 10
                 width: parent.width
-                height: 40
+                height: 50
                 contentItem: Item {
                     // 时长标题
                     Text {
@@ -128,7 +235,7 @@ Window {
                             anchors.fill: parent
                             verticalAlignment: Text.AlignVCenter
                             font.pointSize: 10
-                            inputMethodHints: Qt.ImhDigitsOnly
+                            inputMethodHints: Qt.ImhDigitsOnly                            
                         }
                     }
 
@@ -160,10 +267,10 @@ Window {
                     anchors.centerIn: parent
                     clip: true
                     spacing:10
-                    model: buildBlockEditWindow.submitConditionModel
+                    model: submitConditionModel
                     delegate: Item {
                         width: submitConditionListView.width
-                        height: 20
+                        height: 30
 
                         // 后缀标题
                         Text {
@@ -190,6 +297,9 @@ Window {
                                 verticalAlignment: Text.AlignVCenter
                                 text: model.suffix
                                 font.pointSize: 10
+                                onTextChanged: {
+                                    submitConditionModel.get(index).suffix = text
+                                }
                             }
                         }
 
@@ -221,13 +331,16 @@ Window {
                                 text: model.sizeMin.toString()
                                 font.pointSize: 10
                                 inputMethodHints: Qt.ImhDigitsOnly
+                                onTextChanged: {
+                                    submitConditionModel.get(index).sizeMin = parseInt(text, 10)
+                                }
                             }
                         }
 
                         Text {
                             id: sizeMinText
                             anchors.left: sizeMinTextEdit.right
-                            verticalAlignment: Text.AlignBottom
+                            verticalAlignment: Text.AlignVCenter
                             anchors.leftMargin: 5
                             width: 20
                             height: parent.height
@@ -259,12 +372,15 @@ Window {
                                 text: model.sizeMax.toString()
                                 font.pointSize: 10
                                 inputMethodHints: Qt.ImhDigitsOnly
+                                onTextChanged: {
+                                    submitConditionModel.get(index).sizeMax = parseInt(text, 10)
+                                }
                             }
                         }
 
                         Text {
                             anchors.left: sizeMaxTextEdit.right
-                            verticalAlignment: Text.AlignBottom
+                            verticalAlignment: Text.AlignVCenter
                             anchors.leftMargin: 5
                             width: 30
                             height: parent.height
@@ -297,6 +413,9 @@ Window {
                                 verticalAlignment: Text.AlignVCenter
                                 text: model.groupName
                                 font.pointSize: 10
+                                onTextChanged: {
+                                    submitConditionModel.get(index).groupName = text
+                                }
                             }
                         }
 
@@ -326,6 +445,9 @@ Window {
                                 text: model.count.toString()
                                 font.pointSize: 10
                                 inputMethodHints: Qt.ImhDigitsOnly
+                                onTextChanged: {
+                                    submitConditionModel.get(index).count = parseInt(text, 10)
+                                }
                             }
                         }
 
@@ -388,8 +510,7 @@ Window {
     ListModel {
         id: fileListModel
 //        ListElement {
-//            type: "image"
-//            coverImage: "../res/template_image.png"
+//            icon: "../res/template_image.png"
 //            filePath: ""
 //        }
     }
@@ -398,7 +519,7 @@ Window {
     ListModel {
         id: submitConditionModel
 //        ListElement {
-//           "groupName": ""
+//            groupName: ""
 //            suffix: "png"
 //            // 单位MB
 //            sizeMin: 1
@@ -407,58 +528,26 @@ Window {
 //        }
     }
 
-    Component.onCompleted: {
-        if (buildBlockData.type === "text") {
-            fileListView.enabled = false
-            textEdit.text = buildBlockData.text
-            submitConditionListView.enabled = false
-            timeLengthCtrl.enabled = false
-            addFileButton.visible = false
-            addConditionButton.visible = false
-            timeLengthCtrl.visible = false
-        } else {
-            buildBlockData.studyFiles.forEach(function(item){
-                fileListModel.append(item)
-            })
-            textEdit.enabled = false
-            buildBlockData.finishCondition.forEach(function(item){
-                submitConditionModel.append(item)
-            })
-
-            if (buildBlockData.type === "timer") {
-                timeLengthTextEdit.text = buildBlockData.finishTimeLength.toString()
-            }
-        }
+    Utility {
+        id: utility
     }
 
-    function checkInputData() {
-        // todo by yejinlong, 提示用户
-        if (buildBlockData.type === "text") {
-            if (textEdit.text.length === 0) {
-                return false
-            }
-        } else {
-            if (fileListModel.count === 0) {
-                return false
-            }
-
-            if (buildBlockData.type === "timer") {
-                if (timeLengthTextEdit.text.length === 0) {
-                    return false
+    Component {
+        id: fileDialogComponent
+        FileDialog {
+            id: fileDialog
+            title: "选择文件"
+            folder: shortcuts.pictures
+            nameFilters: ["Image|Video files (*.png *.jpg *.jpeg *.bmp *.mp4 *.avi)"]
+            onAccepted: {
+                var filePath = fileDialog.fileUrl.toString()
+                var newFilePath = buildBlockManager.copyFile(filePath)
+                if (newFilePath === "") {
+                    return
                 }
+                buildBlockEditWindow.addFile(newFilePath)
             }
         }
-
-        return true
     }
 
-    function updateBuildBlockData() {
-        if (buildBlockData.type === "text") {
-            buildBlockData.text = textEdit.text
-        } else {
-            buildBlockData.studyFiles = fileListModel
-            buildBlockData.finishCondition = submitConditionModel
-            buildBlockData.finishTimeLength = parseInt(timeLengthTextEdit.text)
-        }
-    }
 }

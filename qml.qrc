@@ -25,7 +25,6 @@
         <file>qml/BuildBlockConnection.qml</file>
         <file>qml/BuildBlockEditWindow.qml</file>
         <file>qml/BuildBlockManager.qml</file>
-        <file>qml/FileItemData.qml</file>
         <file>qml/FileThumb.qml</file>
         <file>qml/FlowGraphWindow.qml</file>
         <file>qml/TextBuildBlock.qml</file>
@@ -34,5 +33,7 @@
         <file>res/to.png</file>
         <file>res/type_image.png</file>
         <file>res/type_video.png</file>
+        <file>qml/Utility.qml</file>
+        <file>res/default_video_cover.png</file>
     </qresource>
 </RCC>

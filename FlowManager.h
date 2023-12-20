@@ -69,6 +69,13 @@ public:
 
     Q_INVOKABLE void setBuildBlocks(const QString& flowId, QString buildBlocks);
 
+    Q_INVOKABLE QString getFlowDataPath(const QString& flowId);
+
+    // 将文件的图标信息拷贝到流程图目录下，再返回绝对的路径地址（包含file:///），获取失败返回空串
+    Q_INVOKABLE QString getFileIcon(const QString& flowId, const QString& filePath);
+
+    // 将filePath拷贝到流程图目录下，返回新文件的绝对路径（包含file:///），拷贝失败返回空串
+    Q_INVOKABLE QString copyFile(const QString& flowId, const QString& filePath);
 
 private:
     void loadFlows();
@@ -76,8 +83,6 @@ private:
     void loadFlow(const QString& flowId);
 
     void saveFlowConfigure(FlowItem* flowItem);
-
-    QString getFlowDataPath(const QString& flowId);
 
     void deleteDirectory(const QString& dirPath);
 

@@ -61,24 +61,34 @@ BuildBlockBase {
         FileThumb {}
     }
 
-    function addUpperFile(fileItemData) {
-        var child = childComponent.createObject(upperRow)
-        child.height = upperRow.height
-        child.width = child.height
-        child.type = fileItemData.type
-        child.coverImage = fileItemData.coverImage
-        child.filePath = fileItemData.filePath
+    function clearUpperFile() {
+        upperRow.children = []
+        updateWidth()
+    }
+
+    function addUpperFile(icon, filePath) {
+        var params = {
+            icon: icon,
+            filePath: filePath,
+            height: upperRow.height
+        }
+        var child = childComponent.createObject(upperRow, params)
         upperRow.children.push(child)
         updateWidth()
     }
 
-    function addLowerFile(fileItemData) {
-        var child = childComponent.createObject(lowerRow)
-        child.height = lowerRow.height
-        child.width = child.height
-        child.type = fileItemData.type
-        child.coverImage = fileItemData.coverImage
-        child.filePath = fileItemData.filePath
+    function clearLowerFile() {
+        lowerRow.children = [lowerRow.children[lowerRow.children.length-1]]
+        updateWidth()
+    }
+
+    function addLowerFile(icon, filePath) {
+        var params = {
+            icon: icon,
+            filePath: filePath,
+            height: lowerRow.height
+        }
+        var child = childComponent.createObject(lowerRow, params)
 
         // 添加到添加按钮前面
         var newChildren = []

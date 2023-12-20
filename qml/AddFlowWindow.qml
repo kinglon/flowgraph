@@ -125,7 +125,7 @@ Window {
             id: fileDialog
             title: "选择logo"
             folder: shortcuts.pictures
-            nameFilters: ["Image files (*.png *.jpg *.jpeg)"]
+            nameFilters: ["Image files (*.png *.jpg *.jpeg *.bmp)"]
             onAccepted: {
                 addFlowWindow.logoPath = fileDialog.fileUrl
                 logoCtrl.source = addFlowWindow.logoPath

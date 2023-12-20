@@ -10,6 +10,10 @@
 #include <QFileInfo>
 #include <QUuid>
 #include <QDir>
+#include <QIcon>
+#include <QtWinExtras>
+
+#pragma comment  (lib, "User32.lib")
 
 const std::wstring flowFolder(L"flows");
 const std::wstring flowConfFileName(L"flowconf");
@@ -321,4 +325,56 @@ QString FlowManager::getFlowDataPath(const QString& flowId)
         CreateDirectory(flowDataPath.c_str(), NULL);
     }
     return QString::fromStdWString(flowDataPath);
+}
+
+QString FlowManager::getFileIcon(const QString& flowId, const QString& filePath)
+{
+    QString localFilePath = filePath;
+    QUrl url(filePath);
+    if (url.isLocalFile())
+    {
+        localFilePath = url.toLocalFile();
+    }
+
+    SHFILEINFO shfi;
+    memset(&shfi, 0, sizeof(SHFILEINFO));
+    DWORD_PTR result = ::SHGetFileInfo(reinterpret_cast<const WCHAR*>(localFilePath.utf16()), 0, &shfi, sizeof(SHFILEINFO),
+                                       SHGFI_ICON | SHGFI_LARGEICON | SHGFI_USEFILEATTRIBUTES);
+    if (result == 0)
+    {
+        LOG_ERROR(L"failed to get the icon of the file: %s", filePath.toStdWString().c_str());
+        return "";
+    }
+
+    QPixmap pixmap = QtWin::fromHICON(shfi.hIcon);
+    ::DestroyIcon(shfi.hIcon);
+
+    QString outputFilePath = getFlowDataPath(flowId) + getUuid() + ".png";
+    if (!pixmap.save(outputFilePath))
+    {
+        LOG_ERROR(L"failed to save the icon file");
+        return "";
+    }
+
+    return QString("file:///")+outputFilePath;
+}
+
+QString FlowManager::copyFile(const QString& flowId, const QString& filePath)
+{
+    QString localFilePath = filePath;
+    QUrl url(filePath);
+    if (url.isLocalFile())
+    {
+        localFilePath = url.toLocalFile();
+    }
+
+    QFileInfo fileInfo(localFilePath);
+    QString newFilePath = getFlowDataPath(flowId)+getUuid()+"."+fileInfo.suffix();
+    if (!::CopyFile(localFilePath.toStdWString().c_str(), newFilePath.toStdWString().c_str(), TRUE))
+    {
+        LOG_ERROR(L"failed to copy file");
+        return "";
+    }
+
+    return QString("file:///")+newFilePath;
 }

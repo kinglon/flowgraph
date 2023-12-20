@@ -22,6 +22,10 @@ Rectangle {
 
     property alias rightPin: rightPinCtrl
 
+    signal deleteBuildBlock(string buildBlockId)
+
+    signal editBuildBlock(string buildBlockId)
+
 
     // 背景
     Rectangle {
@@ -40,9 +44,36 @@ Rectangle {
         anchors.fill: parent
         acceptedButtons: Qt.LeftButton|Qt.RightButton
         property point clickPos: Qt.point(1,1)
+
+        Menu {
+            id: contextMenu
+            width: 60
+
+            property int fontSize: 15
+            MenuItem {
+                text: "编辑"
+                font.pointSize: contextMenu.fontSize
+                onTriggered: {
+                    buildBlockBase.editBuildBlock(uuid)
+                }
+            }
+            MenuItem {
+                text: "删除"
+                font.pointSize: contextMenu.fontSize
+                onTriggered: {
+                    buildBlockBase.deleteBuildBlock(uuid)
+                }
+            }
+        }
+
         onPressed: {
             if (mouse.button == Qt.LeftButton) {
                 clickPos  = Qt.point(mouse.x,mouse.y);
+            }
+        }
+        onReleased: {
+            if (mouse.button == Qt.RightButton) {
+                contextMenu.popup()
             }
         }
 

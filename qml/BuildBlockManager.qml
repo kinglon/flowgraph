@@ -3,6 +3,8 @@ import QtQuick 2.15
 import Flow 1.0
 
 QtObject {
+    property string flowId
+
     // 每个模块的数据信息
     property var buildBlocks: []
 
@@ -12,8 +14,6 @@ QtObject {
     // 连接线列表
     property var buildBlockConnections: []
 
-    property var fileItemDataComponent
-
     property var textBuildBlockComponent
 
     property var basicBuildBlockComponent
@@ -22,8 +22,9 @@ QtObject {
 
     property var buildBlockConnectionComponent
 
+    property Utility utility: Utility {}
+
     function init() {
-        fileItemDataComponent = Qt.createComponent("FileItemData.qml")
         textBuildBlockComponent = Qt.createComponent("TextBuildBlock.qml")
         basicBuildBlockComponent = Qt.createComponent("BasicBuildBlock.qml")
         timerBuildBlockComponent = Qt.createComponent("TimerBuildBlock.qml")
@@ -45,17 +46,9 @@ QtObject {
     }
 
     // save flowgraph
-    function saveFlowGraph(flowGraphId) {
+    function saveFlowGraph() {
         var jsonString = JSON.stringify(buildBlocks)
-        FlowManager.setBuildBlocks(flowGraphId, jsonString)
-    }
-
-    function createFileItemData(fileItemJsonObject) {
-        fileItemData = fileItemDataComponent.createObject()
-        fileItemData.type = fileItemJsonObject.type
-        fileItemData.coverImage = fileItemJsonObject.coverImage
-        fileItemData.filePath = fileItemJsonObject.filePath
-        return fileItemData
+        FlowManager.setBuildBlocks(flowId, jsonString)
     }
 
     function getBuildBlockData(uuid) {
@@ -88,9 +81,30 @@ QtObject {
         }
     }
 
+    function getDefaultFileIcon(filePath) {
+        var icon = ""
+        var extension = utility.getFileExtension(filePath)
+        if (utility.isImageFile(extension)) {
+            icon = "../res/type_image.png"
+        } else if (utility.isVideoFile(extension)) {
+            icon = "../res/type_video.png"
+        }
+        return icon
+    }
+
+    function getFileIcon(filePath) {
+        var icon = FlowManager.getFileIcon(flowId, filePath)
+        return icon
+    }
+
+    function copyFile(filePath) {
+        var newFilePath = FlowManager.copyFile(flowId, filePath)
+        return newFilePath
+    }
+
     function createBuildBlock(buildBlockData, parent) {
         var buildBlock
-        var params = {"uuid": buildBlockData.uuid}
+        var params = {uuid: buildBlockData.uuid}
         if (buildBlockData.type === "text") {
             buildBlock = textBuildBlockComponent.createObject(parent, params)
             buildBlock.text = buildBlockData.text
@@ -101,13 +115,15 @@ QtObject {
                 buildBlock = basicBuildBlockComponent.createObject(parent, params)
             }
 
-            buildBlockData.studyFiles.forEach(function(item) {
-                fileItemData = createFileItemData(item)
-                buildBlock.addUpperFile(fileItemData)
+            buildBlockData.studyFiles.forEach(function(filePath) {
+                var icon = getDefaultFileIcon(filePath)
+                var absolutePath = toAbsolutePath(filePath)
+                buildBlock.addUpperFile(icon, absolutePath)
             })
             buildBlockData.submitFiles.forEach(function(item) {
-                fileItemData = createFileItemData(item)
-                buildBlock.addLowerFile(fileItemData)
+                var icon = toAbsolutePath(item.icon)
+                var absolutePath = toAbsolutePath(item.filePath)
+                buildBlock.addLowerFile(icon, absolutePath)
             })
             var needSubmitFile = buildBlockData.finishCondition.length > 0
             buildBlock.showOkButton = !needSubmitFile
@@ -122,10 +138,94 @@ QtObject {
         }
 
         buildBlock.x = buildBlockData.x
-        buildBlock.y = buildBlockData.y
+        buildBlock.y = buildBlockData.y        
         buildBlock.enabled = isLastBuildBlockFinish(buildBlockData, "")
         buildBlockCtrls[buildBlockData.uuid] = buildBlock
         return buildBlock
+    }
+
+    function updateBuildBlock(buildBlockData) {
+        if (!buildBlockCtrls.hasOwnProperty(buildBlockData.uuid)) {
+            return
+        }
+
+        var buildBlock = buildBlockCtrls[buildBlockData.uuid]
+        if (buildBlockData.type === "text") {
+            buildBlock.text = buildBlockData.text
+        } else {
+            buildBlock.clearUpperFile()
+            buildBlockData.studyFiles.forEach(function(filePath) {
+                var icon = getDefaultFileIcon(filePath)
+                var absolutePath = toAbsolutePath(filePath)
+                buildBlock.addUpperFile(icon, absolutePath)
+            })
+
+            buildBlock.clearLowerFile()
+            buildBlockData.submitFiles.forEach(function(item) {
+                var icon = toAbsolutePath(item.icon)
+                var absolutePath = toAbsolutePath(item.filePath)
+                buildBlock.addLowerFile(icon, absolutePath)
+            })
+
+            var needSubmitFile = buildBlockData.finishCondition.length > 0
+            buildBlock.showOkButton = !needSubmitFile
+
+            if (buildBlockData.type === "timer") {
+                buildBlock.hour = getHourPartString(buildBlockData.remainTimeLength)
+                buildBlock.minute = getMinutePartString(buildBlockData.remainTimeLength)
+                buildBlock.second = getSecondPartString(buildBlockData.remainTimeLength)
+            }
+
+            buildBlock.updateWidth()
+        }
+
+        saveFlowGraph()
+    }
+
+    function deleteBuildBlock(buildBlockId) {
+        // 删除模块控件
+        if (buildBlockCtrls.hasOwnProperty(buildBlockId)) {
+            buildBlockCtrls[buildBlockId].parent.remove(buildBlockCtrls[buildBlockId])
+            buildBlockCtrls[buildBlockId].destroy()
+            delete buildBlockCtrls[buildBlockId]
+        }
+
+        // 删除该模块控件的连接线
+        toDeleteItems = buildBlockConnections.filter(function(item){
+            if (item.beginBuildBlock.uuid === buildBlockId ||
+                    item.endBuildBlock.uuid === buildBlockId) {
+                return true
+            }
+            return false
+        })
+        buildBlockConnections = buildBlockConnections.filter(function(item){
+            if (item.beginBuildBlock.uuid === buildBlockId ||
+                    item.endBuildBlock.uuid === buildBlockId) {
+                return false
+            }
+            return true
+        })
+        toDeleteItems.forEach(function(item){
+            item.parent.remove(item)
+            item.destroy()
+        })
+
+        // 修改模块的前后模块关系
+        buildBlocks.forEach(function(item){
+            if (item.next === buildBlockId) {
+                item.next = ""
+            }
+            item.last = item.last.filter(function(lastUuid){
+                return lastUuid !== buildBlockId
+            })
+        })
+
+        // 删除模块数据
+        buildBlocks = buildBlocks.filter(function(item){
+            return item.uuid !== buildBlockId
+        })
+
+        saveFlowGraph()
     }
 
     function createBuildBlockConnection(buildBlockData, parent) {
@@ -200,5 +300,12 @@ QtObject {
         var seconds = totalSeconds % 60
         seconds = (seconds < 10 ? "0" : "") + seconds
         return seconds
+    }
+
+    // 转化为绝对路径
+    function toAbsolutePath(fileName) {
+        var flowDataPath = FlowManager.getFlowDataPath(flowId)
+        var absolutePath = "file:///"+flowDataPath+fileName
+        return absolutePath
     }
 }

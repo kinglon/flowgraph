@@ -87,7 +87,7 @@ Window {
                 text: "保存"
                 font.pointSize: 14
                 onClicked: {
-                   buildBlockManager.saveFlowGraph(flowId)
+                   buildBlockManager.saveFlowGraph()
                 }
             }
         }
@@ -95,7 +95,8 @@ Window {
 
     BuildBlockManager {
         id: buildBlockManager
-    }
+        flowId: flowGraphWindow.flowId
+    }    
 
     onClosing: {
         if (managerWindow !== null) {
@@ -125,10 +126,27 @@ Window {
         buildBlockData.x = x
         buildBlockData.y = y
         buildBlockData.type = type
-        var editWindow = buildBlockEditWindowComponent.createObject(flowGraphWindow, {buildBlockData=buildBlockData})
+        var params = {buildBlockData: buildBlockData, buildBlockManager: buildBlockManager}
+        var editWindow = buildBlockEditWindowComponent.createObject(flowGraphWindow, params)
         editWindow.okClicked.connect(function(){
             buildBlockManager.addBuildBlockData(editWindow.buildBlockData)
-            buildBlockManager.createBuildBlock(editWindow.buildBlockData, windowBase.contentArea)
+            var buidlBlock = buildBlockManager.createBuildBlock(editWindow.buildBlockData, windowBase.contentArea)
+            buidlBlock.editBuildBlock.connect(editBuildBlock)
+            buidlBlock.deleteBuildBlock.connect(buildBlockManager.deleteBuildBlock)
+            buildBlockManager.saveFlowGraph()
+        })
+    }
+
+    function editBuildBlock(buildBlockId) {
+        var buildBlockData = buildBlockManager.getBuildBlockData(buildBlockId)
+        if (buildBlockData === null) {
+            return
+        }
+
+        var params = {buildBlockData: buildBlockData, buildBlockManager: buildBlockManager}
+        var editWindow = buildBlockEditWindowComponent.createObject(flowGraphWindow, params)
+        editWindow.okClicked.connect(function(){
+            buildBlockManager.updateBuildBlock(buildBlockData)
         })
     }
 }
