@@ -12,7 +12,94 @@ Window {
     height: 600
     property bool editable: false
     property string flowId: ''
-    property var managerWindow
+    property var managerWindow: null
+
+    BuildBlockManager {
+        id: buildBlockManager
+        flowId: flowGraphWindow.flowId
+    }
+
+    onClosing: {
+        if (managerWindow !== null) {
+            managerWindow.show()
+        }
+    }
+
+    onVisibilityChanged: {
+        if (flowGraphWindow.visibility == Window.Windowed) {
+            flowGraphWindow.visibility = Window.Maximized
+        }
+    }
+
+    Component.onCompleted: {
+        buildBlockManager.init()
+        var buildBlocks = buildBlockManager.loadFlowGraph(flowGraphWindow.flowId)
+        buildBlocks.forEach(function(item) {
+            var buidlBlock = buildBlockManager.createBuildBlock(item, windowBase.contentArea)
+            buidlBlock.editBuildBlock.connect(editBuildBlock)
+            buidlBlock.deleteBuildBlock.connect(buildBlockManager.deleteBuildBlock)
+            buidlBlock.pressPin.connect(onPressPin)
+            buidlBlock.dragPin.connect(onDragPin)
+            buidlBlock.releasePin.connect(onReleasePin)
+        })
+
+        buildBlocks.forEach(function(item) {
+            buildBlockManager.createBuildBlockConnection(item, windowBase.contentArea)
+        })
+    }
+
+    function addBuildBlock(type, x, y) {
+        var buildBlockData = buildBlockManager.createBuildBlockData()
+        buildBlockData.x = x
+        buildBlockData.y = y
+        buildBlockData.type = type
+        var params = {buildBlockData: buildBlockData, buildBlockManager: buildBlockManager}
+        var editWindow = buildBlockEditWindowComponent.createObject(flowGraphWindow, params)
+        editWindow.okClicked.connect(function(){
+            buildBlockManager.addBuildBlockData(editWindow.buildBlockData)
+            var buidlBlock = buildBlockManager.createBuildBlock(editWindow.buildBlockData, windowBase.contentArea)
+            buidlBlock.editBuildBlock.connect(editBuildBlock)
+            buidlBlock.deleteBuildBlock.connect(buildBlockManager.deleteBuildBlock)
+            buidlBlock.pressPin.connect(onPressPin)
+            buidlBlock.dragPin.connect(onDragPin)
+            buidlBlock.releasePin.connect(onReleasePin)
+            buildBlockManager.saveFlowGraph()
+        })
+    }
+
+    function editBuildBlock(buildBlockId) {
+        var buildBlockData = buildBlockManager.getBuildBlockData(buildBlockId)
+        if (buildBlockData === null) {
+            return
+        }
+
+        var params = {buildBlockData: buildBlockData, buildBlockManager: buildBlockManager}
+        var editWindow = buildBlockEditWindowComponent.createObject(flowGraphWindow, params)
+        editWindow.okClicked.connect(function(){
+            buildBlockManager.updateBuildBlock(buildBlockData)
+        })
+    }
+
+    function onPressPin(buildBlock) {
+        //
+    }
+
+    function onDragPin(buildBlock, x, y) {
+        var pos = buildBlock.mapToItem(windowBase.contentArea, x, y)
+        if (!mouseMovingArrowLine.visible) {
+            mouseMovingArrowLine.visible = true
+            mouseMovingArrowLine.beginPoint = pos
+        }
+        mouseMovingArrowLine.endPoint = pos
+        mouseMovingArrowLine.requestPaint()
+    }
+
+    function onReleasePin(buildBlock) {
+        mouseMovingArrowLine.visible = false
+        var beginItem = windowBase.contentArea.childAt(mouseMovingArrowLine.beginPoint.x, mouseMovingArrowLine.beginPoint.y)
+        var endItem = windowBase.contentArea.childAt(mouseMovingArrowLine.endPoint.x, mouseMovingArrowLine.endPoint.y)
+        buildBlockManager.createBuildBlockConnectionV2(beginItem, endItem, windowBase.contentArea)
+    }
 
     WindowBase {
         id: windowBase
@@ -36,7 +123,7 @@ Window {
                 acceptedButtons: Qt.RightButton
                 property int mouseXWhenClick: 0
                 property int mouseYWhenClick: 0
-                onReleased: {                    
+                onReleased: {
                     if (flowGraphWindow.editable && mouse.button === Qt.RightButton) {
                         mouseXWhenClick = mouse.x
                         mouseYWhenClick = mouse.y
@@ -76,7 +163,7 @@ Window {
                         BuildBlockEditWindow {}
                     }
                 }
-            }            
+            }
 
             // 保存按钮
             ButtonBase {
@@ -90,63 +177,13 @@ Window {
                    buildBlockManager.saveFlowGraph()
                 }
             }
+
+            // 鼠标拖动时箭头连线
+            ArrowLine {
+                id: mouseMovingArrowLine
+                visible: false
+                anchors.fill: parent
+            }
         }
-    }
-
-    BuildBlockManager {
-        id: buildBlockManager
-        flowId: flowGraphWindow.flowId
-    }    
-
-    onClosing: {
-        if (managerWindow !== null) {
-            managerWindow.show()
-        }
-    }
-
-    onVisibilityChanged: {
-        if (flowGraphWindow.visibility == Window.Windowed) {
-            flowGraphWindow.visibility = Window.Maximized
-        }
-    }
-
-    Component.onCompleted: {
-        buildBlockManager.init()
-        var buildBlocks = buildBlockManager.loadFlowGraph(flowGraphWindow.flowId)
-        buildBlocks.forEach(function(item) {
-            buildBlockManager.createBuildBlock(item, windowBase.contentArea)
-        })
-        buildBlocks.forEach(function(item) {
-            buildBlockManager.createBuildBlockConnection(item, windowBase.contentArea)
-        })
-    }
-
-    function addBuildBlock(type, x, y) {
-        var buildBlockData = buildBlockManager.createBuildBlockData()
-        buildBlockData.x = x
-        buildBlockData.y = y
-        buildBlockData.type = type
-        var params = {buildBlockData: buildBlockData, buildBlockManager: buildBlockManager}
-        var editWindow = buildBlockEditWindowComponent.createObject(flowGraphWindow, params)
-        editWindow.okClicked.connect(function(){
-            buildBlockManager.addBuildBlockData(editWindow.buildBlockData)
-            var buidlBlock = buildBlockManager.createBuildBlock(editWindow.buildBlockData, windowBase.contentArea)
-            buidlBlock.editBuildBlock.connect(editBuildBlock)
-            buidlBlock.deleteBuildBlock.connect(buildBlockManager.deleteBuildBlock)
-            buildBlockManager.saveFlowGraph()
-        })
-    }
-
-    function editBuildBlock(buildBlockId) {
-        var buildBlockData = buildBlockManager.getBuildBlockData(buildBlockId)
-        if (buildBlockData === null) {
-            return
-        }
-
-        var params = {buildBlockData: buildBlockData, buildBlockManager: buildBlockManager}
-        var editWindow = buildBlockEditWindowComponent.createObject(flowGraphWindow, params)
-        editWindow.okClicked.connect(function(){
-            buildBlockManager.updateBuildBlock(buildBlockData)
-        })
     }
 }

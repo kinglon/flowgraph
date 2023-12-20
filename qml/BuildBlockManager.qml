@@ -52,11 +52,11 @@ QtObject {
     }
 
     function getBuildBlockData(uuid) {
-        buildBlocks.forEach(function(item) {
-            if (uuid === item.uuid) {
-                return item
+        for (var i=0; i<buildBlocks.length; i++) {
+            if (uuid === buildBlocks[i].uuid) {
+                return buildBlocks[i]
             }
-        })
+        }
 
         return null
     }
@@ -226,7 +226,7 @@ QtObject {
         })
 
         saveFlowGraph()
-    }
+    }    
 
     function createBuildBlockConnection(buildBlockData, parent) {
         if (buildBlockData.last.length === 0) {
@@ -252,6 +252,36 @@ QtObject {
             connection.enabled = isLastBuildBlockFinish(buildBlockData, buildBlockData.last[i])
             buildBlockConnections.push(connection)
         }
+    }
+
+    function createBuildBlockConnectionV2(beginBuildBlockCtrl, endBuildBlockCtrl, parent) {
+        if (beginBuildBlockCtrl === null || endBuildBlockCtrl === null) {
+            return
+        }
+
+        var beginBuildBlockData = null
+        var endBuildBlockData = null
+        Object.entries(buildBlockCtrls).forEach(function([key, value]) {
+            if (value.uuid === beginBuildBlockCtrl.uuid) {
+                beginBuildBlockData = getBuildBlockData(key)
+            } else if (value.uuid === endBuildBlockCtrl.uuid) {
+                endBuildBlockData = getBuildBlockData(key)
+            }
+        })
+        if (beginBuildBlockData === null || endBuildBlockData === null) {
+            return
+        }
+
+        if (beginBuildBlockData.next !== "") {
+            return
+        }
+
+        beginBuildBlockData.next = endBuildBlockData.uuid
+        endBuildBlockData.last.push(beginBuildBlockData.uuid)
+        var params = {beginBuildBlock: beginBuildBlockCtrl, endBuildBlock: endBuildBlockCtrl}
+        var connection = buildBlockConnectionComponent.createObject(parent, params)
+        connection.enabled = beginBuildBlockData.finish
+        buildBlockConnections.push(connection)
     }
 
     function createBuildBlockData() {

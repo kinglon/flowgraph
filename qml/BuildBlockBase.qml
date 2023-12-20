@@ -26,6 +26,12 @@ Rectangle {
 
     signal editBuildBlock(string buildBlockId)
 
+    signal pressPin(BuildBlockBase buildBlock)
+
+    signal dragPin(BuildBlockBase buildBlock, real x, real y)
+
+    signal releasePin(BuildBlockBase buildBlock)
+
 
     // 背景
     Rectangle {
@@ -92,6 +98,26 @@ Rectangle {
         }
     }
 
+    Component {
+        id: pinMouseAreaComponent
+        MouseArea {
+            anchors.fill: parent
+            acceptedButtons: Qt.LeftButton
+            cursorShape: Qt.PointingHandCursor
+            onPressed: {
+                buildBlockBase.pressPin(buildBlockBase)
+            }
+            onReleased: {
+                buildBlockBase.releasePin(buildBlockBase)
+            }
+            onPositionChanged: {
+                var pos = mapToItem(buildBlockBase, mouse.x, mouse.y)
+                buildBlockBase.dragPin(buildBlockBase, pos.x, pos.y)
+            }
+        }
+    }
+
+
     // 左边黑点
     Rectangle {
         id: leftPinCtrl
@@ -101,6 +127,10 @@ Rectangle {
         radius: width / 2
         color: "#2D3447"
         property point pos: Qt.point(x+width/2, y+height/2)
+
+        Component.onCompleted: {
+            pinMouseAreaComponent.createObject(leftPinCtrl)
+        }
     }
 
     // 右边黑点
@@ -113,6 +143,10 @@ Rectangle {
         radius: width / 2
         color: "#2D3447"
         property point pos: Qt.point(x+width/2, y+height/2)
+
+        Component.onCompleted: {
+            pinMouseAreaComponent.createObject(rightPinCtrl)
+        }
     }
 
     // 中线
