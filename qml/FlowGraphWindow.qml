@@ -1,6 +1,7 @@
 ﻿import QtQuick 2.15
 import QtQuick.Window 2.15
 import QtQuick.Controls 2.15
+import QtQuick.Dialogs 1.3
 
 Window {
     id: flowGraphWindow
@@ -35,17 +36,37 @@ Window {
         buildBlockManager.init()
         var buildBlocks = buildBlockManager.loadFlowGraph(flowGraphWindow.flowId)
         buildBlocks.forEach(function(item) {
-            var buidlBlock = buildBlockManager.createBuildBlock(item, windowBase.contentArea)
-            buidlBlock.editBuildBlock.connect(editBuildBlock)
-            buidlBlock.deleteBuildBlock.connect(buildBlockManager.deleteBuildBlock)
-            buidlBlock.pressPin.connect(onPressPin)
-            buidlBlock.dragPin.connect(onDragPin)
-            buidlBlock.releasePin.connect(onReleasePin)
+            var buildBlock = buildBlockManager.createBuildBlock(item, windowBase.contentArea)
+            initBuildBlockCtrl(buildBlock)
         })
 
         buildBlocks.forEach(function(item) {
             buildBlockManager.createBuildBlockConnection(item, windowBase.contentArea)
         })
+    }
+
+    function initBuildBlockCtrl(buildBlockCtrl) {
+        buildBlockCtrl.editBuildBlock.connect(editBuildBlock)
+        buildBlockCtrl.deleteBuildBlock.connect(buildBlockManager.deleteBuildBlock)
+        buildBlockCtrl.pressPin.connect(onPressPin)
+        buildBlockCtrl.dragPin.connect(onDragPin)
+        buildBlockCtrl.releasePin.connect(onReleasePin)
+        if (buildBlockCtrl.submitFile !== undefined) {
+            buildBlockCtrl.submitFile.connect(function(buildBlock) {
+                var fileDialog = fileDialogComponent.createObject(flowGraphWindow)
+                fileDialog.selectFileFinish.connect(function(filePath) {
+                    var newFilePath = buildBlockManager.copyFile(filePath)
+                    if (newFilePath === "") {
+                        return
+                    }
+
+                    var icon = buildBlockManager.getFileIcon(newFilePath)
+                    buildBlock.addLowerFile(icon, newFilePath)
+                    buildBlockManager.submitFile(buildBlock.uuid, icon, newFilePath)
+                })
+                fileDialog.open()
+            })
+        }
     }
 
     function addBuildBlock(type, x, y) {
@@ -58,11 +79,7 @@ Window {
         editWindow.okClicked.connect(function(){
             buildBlockManager.addBuildBlockData(editWindow.buildBlockData)
             var buidlBlock = buildBlockManager.createBuildBlock(editWindow.buildBlockData, windowBase.contentArea)
-            buidlBlock.editBuildBlock.connect(editBuildBlock)
-            buidlBlock.deleteBuildBlock.connect(buildBlockManager.deleteBuildBlock)
-            buidlBlock.pressPin.connect(onPressPin)
-            buidlBlock.dragPin.connect(onDragPin)
-            buidlBlock.releasePin.connect(onReleasePin)
+            initBuildBlockCtrl(buildBlock)
             buildBlockManager.saveFlowGraph()
         })
     }
@@ -183,6 +200,21 @@ Window {
                 id: mouseMovingArrowLine
                 visible: false
                 anchors.fill: parent
+            }
+        }
+    }
+
+    Component {
+        id: fileDialogComponent
+        FileDialog {
+            id: fileDialog
+            title: "选择文件"
+            folder: shortcuts.pictures
+            nameFilters: ["All files (*.*)"]
+            signal selectFileFinish(string filePath)
+            onAccepted: {
+                var filePath = fileDialog.fileUrl.toString()
+                fileDialog.selectFileFinish(filePath)
             }
         }
     }

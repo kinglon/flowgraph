@@ -18,6 +18,6 @@ BuildBlockBase {
         elide: Text.ElideRight
         verticalAlignment: Text.AlignVCenter
         horizontalAlignment: Text.AlignHCenter
-        font.pointSize: 15
+        font.pointSize: 12
     }    
 }

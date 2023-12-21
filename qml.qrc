@@ -35,5 +35,7 @@
         <file>res/type_video.png</file>
         <file>qml/Utility.qml</file>
         <file>res/default_video_cover.png</file>
+        <file>res/add2.png</file>
+        <file>res/submit_button_bg.png</file>
     </qresource>
 </RCC>

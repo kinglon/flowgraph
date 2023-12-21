@@ -310,6 +310,20 @@ QtObject {
         buildBlocks.push(buildBlockData)
     }
 
+    function submitFile(buildBlockId, icon, filePath) {
+        var buildBlockData = getBuildBlockData((buildBlockId))
+        if (buildBlockData === null) {
+            return
+        }
+
+        var fileName = filePath.split('\\').pop()
+        var iconFileName = ""
+        if (icon !== null) {
+            iconFileName = icon.split('\\').pop()
+        }
+        buildBlockData.submitFiles.push({icon: iconFileName, filePath: fileName})
+    }
+
     // get hour string, like: 02
     function getHourPartString(totalSeconds) {
         var hours = Math.floor(totalSeconds/3600)

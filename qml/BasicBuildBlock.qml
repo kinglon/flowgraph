@@ -2,45 +2,61 @@
 import QtQuick.Controls 2.15
 
 BuildBlockBase {
-    property int initWidth: 105
+    id: basicBuildBlock
+    property int initWidth: 100
     property int rowSpacing: 5
     property alias lowerRow: lowerRow
     width: initWidth
     property bool showOkButton: true
+    property int itemWidth: 50
+
+    signal submitFile(BuildBlockBase buildBlock)
 
     // 上半部分文件列表
     Row {
         id: upperRow
         parent: upperContent
-        height: parent.height
-        width: parent.width
+        width: 0
+        height: parent.height        
         anchors.centerIn: parent
         spacing: rowSpacing
     }
 
-    // 下半部分文件列表
-    Row {
-        id: lowerRow
+    // 下半部分文件列表和添加按钮
+    Item {
         visible: !showOkButton
         parent: lowerContent
+        width: lowerRow.width+submitButton.width
         height: parent.height
-        width: parent.width
         anchors.centerIn: parent
-        spacing: rowSpacing
 
-        // 添加按钮
+        Row {
+            id: lowerRow
+            width: 0
+            height: parent.height
+            anchors.left: parent.left
+            spacing: rowSpacing
+        }
+
+        // 下半部分添加按钮
         BorderImgButton {
-            height: lowerRow.height
-            width: height
-            bgClickImage: "../res/add_button_bg_click.png"
-            bgNormalImage: "../res/add_button_bg_normal.png"
-            bgHoverImage: "../res/add_button_bg_hover.png"
-            bgDisableImage: "../res/add_button_bg_disable.png"
-            padding: 20
+            id: submitButton
+            width: basicBuildBlock.itemWidth
+            height: 30
+            anchors.right: parent.right
+            anchors.verticalCenter: parent.verticalCenter
+            bgClickImage: "../res/submit_button_bg.png"
+            bgNormalImage: "../res/submit_button_bg.png"
+            bgHoverImage: "../res/submit_button_bg.png"
+            bgDisableImage: "../res/submit_button_bg.png"
+            borderWidth: 10
+            padding: 15
             contentItem: Image {
-                source: "../res/add.png"
+                source: "../res/add2.png"
+                fillMode: Image.Pad
             }
             onClicked: {
+                basicBuildBlock.submitFile(basicBuildBlock)
             }
         }
     }
@@ -51,9 +67,10 @@ BuildBlockBase {
         visible: showOkButton
         parent: lowerContent
         anchors.centerIn: parent
-        height: 40
-        width: 70
+        height: 30
+        width: 60
         text: "确定"
+        font.pointSize: 12
     }
 
     Component {
@@ -70,10 +87,10 @@ BuildBlockBase {
         var params = {
             icon: icon,
             filePath: filePath,
+            width: basicBuildBlock.itemWidth,
             height: upperRow.height
         }
-        var child = childComponent.createObject(upperRow, params)
-        upperRow.children.push(child)
+        childComponent.createObject(upperRow, params)
         updateWidth()
     }
 
@@ -86,39 +103,29 @@ BuildBlockBase {
         var params = {
             icon: icon,
             filePath: filePath,
+            width: basicBuildBlock.itemWidth,
             height: lowerRow.height
         }
-        var child = childComponent.createObject(lowerRow, params)
-
-        // 添加到添加按钮前面
-        var newChildren = []
-        for (var i=0; i< lowerRow.children.length-1; i++) {
-            newChildren.push(lowerRow.children[i])
-        }
-        newChildren.push(child)
-        newChildren.push(lowerRow.children[lowerRow.children.length-1])
-        lowerRow.children = newChildren
+        childComponent.createObject(lowerRow, params)
         updateWidth()
     }
 
     function updateWidth() {
-        // 每个子Item的宽度跟它的行高度一样
-        var itemWidth = upperRow.height
-        var childCount = Math.max(upperRow.children.length, lowerRow.children.length)
+        var childCount = Math.max(upperRow.children.length, lowerRow.children.length+1)
         if (childCount <= 1) {
             width = initWidth
         } else {
-            width = initWidth + (childCount-1)*(itemWidth+rowSpacing)
+            width = initWidth + (childCount-1)*(basicBuildBlock.itemWidth+rowSpacing)
         }
 
-        upperRow.width = itemWidth*upperRow.children.length
+        upperRow.width = basicBuildBlock.itemWidth*upperRow.children.length
         if (upperRow.children.length > 1) {
             upperRow.width += (upperRow.children.length-1)*rowSpacing
         }
 
-        lowerRow.width = itemWidth*lowerRow.children.length
+        lowerRow.width = basicBuildBlock.itemWidth*lowerRow.children.length
         if (lowerRow.children.length > 1) {
-            lowerRow.width += (lowerRow.children.length-1)*rowSpacing
+            lowerRow.width += lowerRow.children.length*rowSpacing
         }
     }
 }
