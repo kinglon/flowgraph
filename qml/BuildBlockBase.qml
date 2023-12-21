@@ -43,6 +43,26 @@ Rectangle {
         border.color: "#2D3447"
         border.width: 2
         radius: 10
+
+        // 上半部分
+        Item {
+            id: upperContent
+            width: background.width - background.radius*2
+            height: (background.height - background.radius*4)/2
+            anchors.top: background.top
+            anchors.topMargin: background.radius
+            anchors.horizontalCenter: parent.horizontalCenter
+        }
+
+        // 下半部分
+        Item {
+            id: lowerContent
+            width: background.width - background.radius*2
+            height: (background.height - background.radius*4)/2
+            anchors.bottom: background.bottom
+            anchors.bottomMargin: background.radius
+            anchors.horizontalCenter: parent.horizontalCenter
+        }
     }
 
     // 鼠标拖动
@@ -158,27 +178,6 @@ Rectangle {
         color: "#2D3447"
         anchors.verticalCenter: parent.verticalCenter
     }
-
-    // 上半部分
-    Item {
-        id: upperContent
-        width: background.width - background.radius*2
-        height: (background.height - background.radius*4)/2
-        anchors.top: background.top
-        anchors.topMargin: background.radius
-        anchors.horizontalCenter: parent.horizontalCenter
-    }
-
-    // 下半部分
-    Item {
-        id: lowerContent
-        width: background.width - background.radius*2
-        height: (background.height - background.radius*4)/2
-        anchors.bottom: background.bottom
-        anchors.bottomMargin: background.radius
-        anchors.horizontalCenter: parent.horizontalCenter
-    }
-
 
     // 禁用状态盖板
     Rectangle {

@@ -8,12 +8,14 @@ Item {
 
     property string filePath: ""
 
+    property bool useSourceSize: true
+
     Image {
         id: image
         source: fileThumb.icon
-        width: sourceSize.width
-        height: sourceSize.height
-        fillMode: Image.Pad
+        width: useSourceSize?sourceSize.width:parent.width
+        height: useSourceSize?sourceSize.height:parent.height
+        fillMode: useSourceSize?Image.Pad:Image.PreserveAspectFit
         anchors.centerIn: parent
 
         MouseArea {

@@ -50,7 +50,6 @@ BuildBlockBase {
             bgHoverImage: "../res/submit_button_bg.png"
             bgDisableImage: "../res/submit_button_bg.png"
             borderWidth: 10
-            padding: 15
             contentItem: Image {
                 source: "../res/add2.png"
                 fillMode: Image.Pad

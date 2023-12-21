@@ -1,6 +1,7 @@
-import QtQuick 2.15
+﻿import QtQuick 2.15
 import QtQuick.Window 2.15
 import QtQuick.Controls 2.15
+import QtQuick.Dialogs 1.3
 
 Window {
     id: flowGraphWindow
@@ -10,7 +11,112 @@ Window {
     title: "流程图"
     width: 800
     height: 600
-    property bool editable: true
+    property bool editable: false
+    property string flowId: ''
+    property var managerWindow: null
+
+    BuildBlockManager {
+        id: buildBlockManager
+        flowId: flowGraphWindow.flowId
+    }
+
+    onClosing: {
+        if (managerWindow !== null) {
+            managerWindow.show()
+        }
+    }
+
+    onVisibilityChanged: {
+        if (flowGraphWindow.visibility == Window.Windowed) {
+            flowGraphWindow.visibility = Window.Maximized
+        }
+    }
+
+    Component.onCompleted: {
+        buildBlockManager.init()
+        var buildBlocks = buildBlockManager.loadFlowGraph(flowGraphWindow.flowId)
+        buildBlocks.forEach(function(item) {
+            var buildBlock = buildBlockManager.createBuildBlock(item, windowBase.contentArea)
+            initBuildBlockCtrl(buildBlock)
+        })
+
+        buildBlocks.forEach(function(item) {
+            buildBlockManager.createBuildBlockConnection(item, windowBase.contentArea)
+        })
+    }
+
+    function initBuildBlockCtrl(buildBlockCtrl) {
+        buildBlockCtrl.editBuildBlock.connect(editBuildBlock)
+        buildBlockCtrl.deleteBuildBlock.connect(buildBlockManager.deleteBuildBlock)
+        buildBlockCtrl.pressPin.connect(onPressPin)
+        buildBlockCtrl.dragPin.connect(onDragPin)
+        buildBlockCtrl.releasePin.connect(onReleasePin)
+        if (buildBlockCtrl.submitFile !== undefined) {
+            buildBlockCtrl.submitFile.connect(function(buildBlock) {
+                var fileDialog = fileDialogComponent.createObject(flowGraphWindow)
+                fileDialog.selectFileFinish.connect(function(filePath) {
+                    var newFilePath = buildBlockManager.copyFile(filePath)
+                    if (newFilePath === "") {
+                        return
+                    }
+
+                    var icon = buildBlockManager.getFileIcon(newFilePath)
+                    buildBlock.addLowerFile(icon, newFilePath)
+                    buildBlockManager.submitFile(buildBlock.uuid, icon, newFilePath)
+                })
+                fileDialog.open()
+            })
+        }
+    }
+
+    function addBuildBlock(type, x, y) {
+        var buildBlockData = buildBlockManager.createBuildBlockData()
+        buildBlockData.x = x
+        buildBlockData.y = y
+        buildBlockData.type = type
+        var params = {buildBlockData: buildBlockData, buildBlockManager: buildBlockManager}
+        var editWindow = buildBlockEditWindowComponent.createObject(flowGraphWindow, params)
+        editWindow.okClicked.connect(function(){
+            buildBlockManager.addBuildBlockData(editWindow.buildBlockData)
+            var buidlBlock = buildBlockManager.createBuildBlock(editWindow.buildBlockData, windowBase.contentArea)
+            initBuildBlockCtrl(buildBlock)
+            buildBlockManager.saveFlowGraph()
+        })
+    }
+
+    function editBuildBlock(buildBlockId) {
+        var buildBlockData = buildBlockManager.getBuildBlockData(buildBlockId)
+        if (buildBlockData === null) {
+            return
+        }
+
+        var params = {buildBlockData: buildBlockData, buildBlockManager: buildBlockManager}
+        var editWindow = buildBlockEditWindowComponent.createObject(flowGraphWindow, params)
+        editWindow.okClicked.connect(function(){
+            buildBlockManager.updateBuildBlock(buildBlockData)
+        })
+    }
+
+    function onPressPin(buildBlock) {
+        //
+    }
+
+    function onDragPin(buildBlock, x, y) {
+        var pos = buildBlock.mapToItem(windowBase.contentArea, x, y)
+        if (!mouseMovingArrowLine.visible) {
+            mouseMovingArrowLine.visible = true
+            mouseMovingArrowLine.beginPoint = pos
+        }
+        mouseMovingArrowLine.endPoint = pos
+        mouseMovingArrowLine.requestPaint()
+    }
+
+    function onReleasePin(buildBlock) {
+        mouseMovingArrowLine.visible = false
+        var beginItem = windowBase.contentArea.childAt(mouseMovingArrowLine.beginPoint.x, mouseMovingArrowLine.beginPoint.y)
+        var endItem = windowBase.contentArea.childAt(mouseMovingArrowLine.endPoint.x, mouseMovingArrowLine.endPoint.y)
+        buildBlockManager.createBuildBlockConnectionV2(beginItem, endItem, windowBase.contentArea)
+    }
 
     WindowBase {
         id: windowBase
@@ -29,10 +135,15 @@ Window {
             }
 
             MouseArea {
+                id: contentMouseArea
                 anchors.fill: parent
                 acceptedButtons: Qt.RightButton
-                onReleased: {                    
+                property int mouseXWhenClick: 0
+                property int mouseYWhenClick: 0
+                onReleased: {
                     if (flowGraphWindow.editable && mouse.button === Qt.RightButton) {
+                        mouseXWhenClick = mouse.x
+                        mouseYWhenClick = mouse.y
                         contextMenu.popup()
                     }
                 }
@@ -46,44 +157,65 @@ Window {
                         text: "添加备注模块"
                         font.pointSize: contextMenu.fontSize
                         onTriggered: {
-                            var buildBlockData = buildBlockManager.createBuildBlock("12345","text")
-                            buildBlockData.text = "12345"
-                            var editWindow = buildBlockEditWindowComponent.createObject(flowGraphWindow, {buildBlockData=buildBlockData})
+                            flowGraphWindow.addBuildBlock("text", contentMouseArea.mouseXWhenClick, contentMouseArea.mouseYWhenClick)
                         }
                     }
                     MenuItem {
                         text: "添加基本模块"
                         font.pointSize: contextMenu.fontSize
                         onTriggered: {
-                            console.log("添加基本模块")
+                            flowGraphWindow.addBuildBlock("basic", contentMouseArea.mouseXWhenClick, contentMouseArea.mouseYWhenClick)
                         }
                     }
                     MenuItem {
                         text: "添加计时模块"
                         font.pointSize: contextMenu.fontSize
                         onTriggered: {
-                            console.log("添加计时模块")
+                            flowGraphWindow.addBuildBlock("timer", contentMouseArea.mouseXWhenClick, contentMouseArea.mouseYWhenClick)
                         }
                     }
 
                     Component {
                         id: buildBlockEditWindowComponent
-                        BuildBlockEditWindow {
-
-                        }
+                        BuildBlockEditWindow {}
                     }
                 }
-            }            
+            }
+
+            // 保存按钮
+            ButtonBase {
+                x: 15
+                y: 15
+                width: 60
+                height: 40
+                text: "保存"
+                font.pointSize: 14
+                onClicked: {
+                   buildBlockManager.saveFlowGraph()
+                }
+            }
+
+            // 鼠标拖动时箭头连线
+            ArrowLine {
+                id: mouseMovingArrowLine
+                visible: false
+                anchors.fill: parent
+            }
         }
     }
 
-    BuildBlockManager {
-        id: buildBlockManager
-    }
-
-    onVisibilityChanged: {
-        if (flowGraphWindow.visibility == Window.Windowed) {
-            flowGraphWindow.visibility = Window.Maximized
+    Component {
+        id: fileDialogComponent
+        FileDialog {
+            id: fileDialog
+            title: "选择文件"
+            folder: shortcuts.pictures
+            nameFilters: ["All files (*.*)"]
+            signal selectFileFinish(string filePath)
+            onAccepted: {
+                var filePath = fileDialog.fileUrl.toString()
+                fileDialog.selectFileFinish(filePath)
+            }
         }
     }
 }

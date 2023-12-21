@@ -1,4 +1,4 @@
-import QtQuick 2.15
+﻿import QtQuick 2.15
 import QtQuick.Controls 2.15
 
 ArrowLine {
@@ -31,7 +31,7 @@ ArrowLine {
 
     Connections {
         target: beginBuildBlock
-        onXChanged: {
+        function onXChanged() {
             buildBlockConnection.updateBeginPoint()
             buildBlockConnection.requestPaint()
         }
@@ -39,7 +39,7 @@ ArrowLine {
 
     Connections {
         target: beginBuildBlock
-        onYChanged: {
+        function onYChanged() {
             buildBlockConnection.updateBeginPoint()
             buildBlockConnection.requestPaint()
         }
@@ -47,7 +47,7 @@ ArrowLine {
 
     Connections {
         target: beginBuildBlock
-        onWidthChanged: {
+        function onWidthChanged() {
             buildBlockConnection.updateBeginPoint()
             buildBlockConnection.requestPaint()
         }
@@ -55,7 +55,7 @@ ArrowLine {
 
     Connections {
         target: beginBuildBlock
-        onHeightChanged: {
+        function onHeightChanged() {
             buildBlockConnection.updateBeginPoint()
             buildBlockConnection.requestPaint()
         }
@@ -63,7 +63,7 @@ ArrowLine {
 
     Connections {
         target: endBuildBlock
-        onXChanged: {
+        function onXChanged() {
             buildBlockConnection.updateEndPoint()
             buildBlockConnection.requestPaint()
         }
@@ -71,7 +71,7 @@ ArrowLine {
 
     Connections {
         target: endBuildBlock
-        onYChanged: {
+        function onYChanged() {
             buildBlockConnection.updateEndPoint()
             buildBlockConnection.requestPaint()
         }
@@ -79,7 +79,7 @@ ArrowLine {
 
     Connections {
         target: endBuildBlock
-        onWidthChanged: {
+        function onWidthChanged() {
             buildBlockConnection.updateEndPoint()
             buildBlockConnection.requestPaint()
         }
@@ -87,7 +87,7 @@ ArrowLine {
 
     Connections {
         target: endBuildBlock
-        onHeightChanged: {
+        function onHeightChanged() {
             buildBlockConnection.updateEndPoint()
             buildBlockConnection.requestPaint()
         }

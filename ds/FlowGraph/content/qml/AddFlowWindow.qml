@@ -1,4 +1,4 @@
-import QtQuick 2.15
+﻿import QtQuick 2.15
 import QtQuick.Window 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Dialogs 1.3
@@ -26,13 +26,12 @@ Window {
         window: addFlowWindow
         title: addFlowWindow.title
         hasLogo: false
-        hasMinButton: false
-        content: windowContent
+        hasMinButton: false        
     }
 
     Column {
         id: windowContent
-        parent: null
+        parent: windowBase.contentArea
         padding: 20
         spacing: 10
 
@@ -126,7 +125,7 @@ Window {
             id: fileDialog
             title: "选择logo"
             folder: shortcuts.pictures
-            nameFilters: ["Image files (*.png *.jpg *.jpeg)"]
+            nameFilters: ["Image files (*.png *.jpg *.jpeg *.bmp)"]
             onAccepted: {
                 addFlowWindow.logoPath = fileDialog.fileUrl
                 logoCtrl.source = addFlowWindow.logoPath

@@ -1,11 +1,12 @@
-import QtQuick 2.15
+﻿import QtQuick 2.15
 import QtQuick.Controls 2.15
 
 Rectangle {
     id: buildBlockBase
-    width: 150
-    height: 200
+    width: 100
+    height: 120
     color: "transparent"
+    enabled: true
 
     property string uuid: ""
 
@@ -21,6 +22,16 @@ Rectangle {
 
     property alias rightPin: rightPinCtrl
 
+    signal deleteBuildBlock(string buildBlockId)
+
+    signal editBuildBlock(string buildBlockId)
+
+    signal pressPin(BuildBlockBase buildBlock)
+
+    signal dragPin(BuildBlockBase buildBlock, real x, real y)
+
+    signal releasePin(BuildBlockBase buildBlock)
+
 
     // 背景
     Rectangle {
@@ -32,6 +43,26 @@ Rectangle {
         border.color: "#2D3447"
         border.width: 2
         radius: 10
+
+        // 上半部分
+        Item {
+            id: upperContent
+            width: background.width - background.radius*2
+            height: (background.height - background.radius*4)/2
+            anchors.top: background.top
+            anchors.topMargin: background.radius
+            anchors.horizontalCenter: parent.horizontalCenter
+        }
+
+        // 下半部分
+        Item {
+            id: lowerContent
+            width: background.width - background.radius*2
+            height: (background.height - background.radius*4)/2
+            anchors.bottom: background.bottom
+            anchors.bottomMargin: background.radius
+            anchors.horizontalCenter: parent.horizontalCenter
+        }
     }
 
     // 鼠标拖动
@@ -39,9 +70,36 @@ Rectangle {
         anchors.fill: parent
         acceptedButtons: Qt.LeftButton|Qt.RightButton
         property point clickPos: Qt.point(1,1)
+
+        Menu {
+            id: contextMenu
+            width: 60
+
+            property int fontSize: 15
+            MenuItem {
+                text: "编辑"
+                font.pointSize: contextMenu.fontSize
+                onTriggered: {
+                    buildBlockBase.editBuildBlock(uuid)
+                }
+            }
+            MenuItem {
+                text: "删除"
+                font.pointSize: contextMenu.fontSize
+                onTriggered: {
+                    buildBlockBase.deleteBuildBlock(uuid)
+                }
+            }
+        }
+
         onPressed: {
             if (mouse.button == Qt.LeftButton) {
                 clickPos  = Qt.point(mouse.x,mouse.y);
+            }
+        }
+        onReleased: {
+            if (mouse.button == Qt.RightButton) {
+                contextMenu.popup()
             }
         }
 
@@ -60,6 +118,26 @@ Rectangle {
         }
     }
 
+    Component {
+        id: pinMouseAreaComponent
+        MouseArea {
+            anchors.fill: parent
+            acceptedButtons: Qt.LeftButton
+            cursorShape: Qt.PointingHandCursor
+            onPressed: {
+                buildBlockBase.pressPin(buildBlockBase)
+            }
+            onReleased: {
+                buildBlockBase.releasePin(buildBlockBase)
+            }
+            onPositionChanged: {
+                var pos = mapToItem(buildBlockBase, mouse.x, mouse.y)
+                buildBlockBase.dragPin(buildBlockBase, pos.x, pos.y)
+            }
+        }
+    }
+
+
     // 左边黑点
     Rectangle {
         id: leftPinCtrl
@@ -69,6 +147,10 @@ Rectangle {
         radius: width / 2
         color: "#2D3447"
         property point pos: Qt.point(x+width/2, y+height/2)
+
+        Component.onCompleted: {
+            pinMouseAreaComponent.createObject(leftPinCtrl)
+        }
     }
 
     // 右边黑点
@@ -81,6 +163,10 @@ Rectangle {
         radius: width / 2
         color: "#2D3447"
         property point pos: Qt.point(x+width/2, y+height/2)
+
+        Component.onCompleted: {
+            pinMouseAreaComponent.createObject(rightPinCtrl)
+        }
     }
 
     // 中线
@@ -91,27 +177,7 @@ Rectangle {
         height: 2
         color: "#2D3447"
         anchors.verticalCenter: parent.verticalCenter
-    }
-
-    // 上半部分
-    Item {
-        id: upperContent
-        width: background.width - background.radius*2
-        height: (background.height - background.radius*4)/2
-        anchors.top: background.top
-        anchors.topMargin: background.radius
-        anchors.horizontalCenter: parent.horizontalCenter
-    }
-
-    // 下半部分
-    Item {
-        id: lowerContent
-        width: background.width - background.radius*2
-        height: (background.height - background.radius*4)/2
-        anchors.bottom: background.bottom
-        anchors.bottomMargin: background.radius
-        anchors.horizontalCenter: parent.horizontalCenter
-    }
+    }    
 
 
     // 禁用状态盖板

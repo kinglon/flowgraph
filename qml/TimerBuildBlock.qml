@@ -9,7 +9,7 @@ BasicBuildBlock {
     property string second: "34"
     initWidth: 130
 
-    background.width: background.parent.width - timerCtrlWidth + 5
+    background.width: background.parent.width - timerCtrlWidth
     background.anchors.centerIn: undefined
     background.anchors.verticalCenter: background.parent.verticalCenter
     background.anchors.left: background.parent.left
@@ -30,7 +30,6 @@ BasicBuildBlock {
         Column {
             id: column
             anchors.fill: parent
-            spacing: 3
             property int blackPointMargin: 8
             property int blackPointHeight: 4
             property int textHeight: (column.height-2*blackPointHeight)/3

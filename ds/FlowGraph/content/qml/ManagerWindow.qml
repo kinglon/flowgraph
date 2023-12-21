@@ -11,26 +11,77 @@ Window {
     height: 600
     title: "流程图管理端"
 
-    WindowBase {        
+    WindowBase {
+        id: windowBase
         window: managerWindow
         title: managerWindow.title
         GridView {
-            property int columnCount: 8
-
             id: gridView
-            parent: contentArea
+            parent: windowBase.contentArea
             anchors.fill: parent
             clip: true
             cellWidth: width/columnCount
             cellHeight: 125
+            property int columnCount: 8
             delegate: Item {
+                required property string flowId
                 required property bool isAddButton
                 required property string content
                 required property string iconSource
 
+                id: gridItem
                 width: gridView.cellWidth
                 height: gridView.cellHeight
 
+                MouseArea {
+                    anchors.fill: parent
+                    acceptedButtons: Qt.RightButton
+                    onReleased: {
+                        if (gridItem.isAddButton) {
+                            return
+                        }
+
+                        if (mouse.button === Qt.RightButton) {
+                            contextMenu.popup()
+                        }
+                    }
+
+                    Menu {
+                        id: contextMenu
+                        width: 60
+
+                        property int fontSize: 15
+                        MenuItem {
+                            text: "打包"
+                            font.pointSize: contextMenu.fontSize
+                            onTriggered: {
+                                FlowManager.packageFlowItem(flowId)
+                                // todo by yejinlong, 等待提示
+                            }
+                        }
+                        MenuItem {
+                            text: "复制"
+                            font.pointSize: contextMenu.fontSize
+                            onTriggered: {
+                                var newFlowId = FlowManager.copyFlowItem(flowId)
+                                var flowItem = flowItemComponent.createObject()
+                                if (FlowManager.getFlowItem(newFlowId, flowItem)) {
+                                    gridModel.addFlowItem(flowItem)
+                                }
+                            }
+                        }
+                        MenuItem {
+                            text: "删除"
+                            font.pointSize: contextMenu.fontSize
+                            onTriggered: {
+                                FlowManager.deleteFlowItem(flowId)
+                                gridModel.deleteFlowItem(flowId)
+                            }
+                        }
+                    }
+                }
+
+                // 添加按钮
                 BorderImgButton {
                     visible: isAddButton
                     anchors.fill: parent
@@ -46,27 +97,24 @@ Window {
                     contentItem: Image {
                         source: "../res/add.png"
                     }
-
                     onClicked: {
-                        var addFlowWindowComponent = Qt.createComponent("AddFlowWindow.qml")
-                        if (addFlowWindowComponent.status === Component.Ready) {
-                            var addWindow = addFlowWindowComponent.createObject(managerWindow)
-                            addWindow.okClicked.connect(function() {
-                                var item = {isAddButton: false, content: addWindow.name, iconSource: addWindow.logoPath}
-                                gridModel.insert(gridModel.count-1, item)
-
-                                var flowItem = flowItemComponent.createObject()
-                                flowItem.id = String(Math.floor(Date.now()/1000))
-                                flowItem.name = addWindow.name
-                                flowItem.logoFilePath = addWindow.logoPath
-                                FlowManager.addFlowItem(flowItem)
-                            })
-                        } else {
-                            console.log("Error loading AddFlowWindow component:", addFlowWindowComponent.errorString());
-                        }
+                        var addWindow = addFlowWindowComponent.createObject(managerWindow)
+                        addWindow.okClicked.connect(function() {
+                            var flowItem = flowItemComponent.createObject()
+                            flowItem.id = FlowManager.getUuid()
+                            flowItem.name = addWindow.name
+                            flowItem.logoFilePath = addWindow.logoPath
+                            if (FlowManager.addFlowItem(flowItem)) {
+                                // 添加完后，logo路径会变，重新获取
+                                if (FlowManager.getFlowItem(flowItem.id, flowItem)) {
+                                    gridModel.addFlowItem(flowItem)
+                                }
+                            }
+                        })
                     }
                 }
 
+                // 流程图缩略图
                 BorderImgButton {
                     visible: !isAddButton
                     anchors.fill: parent
@@ -100,23 +148,45 @@ Window {
                             verticalAlignment: Text.AlignTop
                         }
                     }
+                    onClicked: {
+                        managerWindow.hide()
+                        var params = {editable: true, flowId: gridItem.flowId, managerWindow: managerWindow}
+                        flowGraphWindowComponent.createObject(null, params)
+                    }
                 }
             }
-            model: ListModel {
-                id: gridModel
-
-                ListElement {
-                    isAddButton: true
-                    content: ''
-                    iconSource: ''
-                }
-            }
+            model: gridModel
             Component.onCompleted: {
                 var flows = FlowManager.flows;
                 for (var index in flows) {
                     var flow = flows[index]
-                    var item = {isAddButton: false, content: flow.name, iconSource: flow.logoFilePath};
-                    gridModel.insert(gridModel.count-1, item);
+                    gridModel.addFlowItem(flow)
+                }
+            }
+        }
+    }
+
+    ListModel {
+        id: gridModel
+
+        ListElement {
+            flowId: ''
+            isAddButton: true
+            content: ''
+            iconSource: ''
+        }
+
+        function addFlowItem(flow) {
+            var item = {isAddButton: false, flowId: flow.id, content: flow.name, iconSource: flow.logoFilePath};
+            gridModel.insert(gridModel.count-1, item);
+        }
+
+        function deleteFlowItem(flowId) {
+            for (var i = 0; i < gridModel.count; i++) {
+                var item = gridModel.get(i);
+                if (item.flowId === flowId) {
+                    gridModel.remove(i)
+                    break
                 }
             }
         }
@@ -124,8 +194,16 @@ Window {
 
     Component {
         id: flowItemComponent
-        FlowItem {
-            //
-        }
+        FlowItem {}
+    }
+
+    Component {
+        id: addFlowWindowComponent
+        AddFlowWindow {}
+    }
+
+    Component {
+        id: flowGraphWindowComponent
+        FlowGraphWindow {}
     }
 }

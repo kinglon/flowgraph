@@ -10,7 +10,7 @@ Window {
     modality: Qt.WindowModal
     title: "添加模块"
     width: 800
-    height: 700
+    height: 750
 
     // 模块JSON对象
     property var buildBlockData
@@ -137,12 +137,14 @@ Window {
             width: parent.width-2*padding
             height: parent.height-2*padding
             anchors.centerIn: parent
+            spacing: 5
 
             // 文件缩略图列表
             ListView {
                 id: fileListView
-                width: parent.width
+                width: fileListModel.count*height+1
                 height: 300
+                anchors.horizontalCenter: parent.horizontalCenter
                 spacing: 10
                 orientation: ListView.Horizontal
                 contentWidth: fileListModel.count*height
@@ -153,6 +155,7 @@ Window {
                     height: fileListView.height
                     icon: model.icon
                     filePath: model.filePath
+                    useSourceSize: false
                 }
             }
 
@@ -235,7 +238,7 @@ Window {
                             anchors.fill: parent
                             verticalAlignment: Text.AlignVCenter
                             font.pointSize: 10
-                            inputMethodHints: Qt.ImhDigitsOnly                            
+                            inputMethodHints: Qt.ImhDigitsOnly
                         }
                     }
 
@@ -258,7 +261,7 @@ Window {
             // 提交文件条件
             Item {
                 width: parent.width
-                height: parent.height-fileListView.height-textArea.height-timeLengthCtrl.height-okArea.height
+                height: 150
 
                 ListView {
                     id: submitConditionListView

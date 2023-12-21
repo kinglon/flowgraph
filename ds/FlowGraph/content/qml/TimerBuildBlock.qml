@@ -1,20 +1,17 @@
-import QtQuick 2.15
+﻿import QtQuick 2.15
 import QtQuick.Controls 2.15
 
 BasicBuildBlock {
     id: basicBuildBlock
-
     property int timerCtrlWidth: 30
-
     property string hour: "00"
-
     property string minute: "12"
-
     property string second: "34"
-
     initWidth: 130
+    width: initWidth
+    height: 120
 
-    background.width: background.parent.width - timerCtrlWidth + 5
+    background.width: background.parent.width - timerCtrlWidth
     background.anchors.centerIn: undefined
     background.anchors.verticalCenter: background.parent.verticalCenter
     background.anchors.left: background.parent.left
@@ -23,7 +20,7 @@ BasicBuildBlock {
     Rectangle {
         parent: parent
         width: 30
-        height: 100
+        height: 90
         color: basicBuildBlock.background.color
         border.color: basicBuildBlock.background.border.color
         border.width: basicBuildBlock.background.border.width
@@ -35,18 +32,18 @@ BasicBuildBlock {
         Column {
             id: column
             anchors.fill: parent
-            spacing: 3
+            spacing: 0
             property int blackPointMargin: 8
             property int blackPointHeight: 4
-            property int textHeight: 27
+            property int textHeight: (column.height-2*blackPointHeight)/3
             Text {
                 id: hourCtrl
                 text: hour
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
-                font.pointSize: 15
+                font.pointSize: 12
                 height: column.textHeight
-                width: parent.width
+                width: parent.width                
             }
 
             Item {
@@ -74,7 +71,7 @@ BasicBuildBlock {
                 text: minute
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
-                font.pointSize: 15
+                font.pointSize: 12
                 height: column.textHeight
                 width: parent.width
             }
@@ -104,7 +101,7 @@ BasicBuildBlock {
                 text: second
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
-                font.pointSize: 15
+                font.pointSize: 12
                 height: column.textHeight
                 width: parent.width
             }

@@ -103,7 +103,7 @@ QtObject {
     }
 
     function createBuildBlock(buildBlockData, parent) {
-        var buildBlock
+        var buildBlock = null
         var params = {uuid: buildBlockData.uuid}
         if (buildBlockData.type === "text") {
             buildBlock = textBuildBlockComponent.createObject(parent, params)
