@@ -29,8 +29,9 @@
                 }
             ],
             "finishConditionGroup":"",
-            "finishTimeLength": 3600,
-            "remainTimeLength": 2400
+            "finishTimeLength": 24,
+            "beginTime comment": "开始学习的时间，UTC，单位秒"
+            "beginTime": 2400
         }
     ]
 }

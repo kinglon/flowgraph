@@ -14,6 +14,12 @@ QtObject {
     // 连接线列表
     property var buildBlockConnections: []
 
+    // 定时保存配置，单位毫秒
+    property int autoSaveInterval: 5000
+
+    // 上一次保存配置的时间戳，单位毫秒
+    property int lastSaveTime: 0
+
     property var textBuildBlockComponent
 
     property var basicBuildBlockComponent
@@ -29,6 +35,7 @@ QtObject {
         basicBuildBlockComponent = Qt.createComponent("BasicBuildBlock.qml")
         timerBuildBlockComponent = Qt.createComponent("TimerBuildBlock.qml")
         buildBlockConnectionComponent = Qt.createComponent("BuildBlockConnection.qml")
+        timer.start()
     }
 
     // load flowgraph
@@ -47,6 +54,15 @@ QtObject {
 
     // save flowgraph
     function saveFlowGraph() {
+        // 自动保存模块的位置
+        Object.entries(buildBlockCtrls).forEach(function([uuid, buildBlockCtrl]) {
+            var buildBlockData = getBuildBlockData(uuid)
+            if (buildBlockData !== null) {
+                buildBlockData.x = buildBlockCtrl.x
+                buildBlockData.y = buildBlockCtrl.y
+            }
+        })
+
         var jsonString = JSON.stringify(buildBlocks)
         FlowManager.setBuildBlocks(flowId, jsonString)
     }
@@ -129,9 +145,10 @@ QtObject {
             buildBlock.showOkButton = !needSubmitFile
 
             if (buildBlockData.type === "timer") {
-                buildBlock.hour = getHourPartString(buildBlockData.remainTimeLength)
-                buildBlock.minute = getMinutePartString(buildBlockData.remainTimeLength)
-                buildBlock.second = getSecondPartString(buildBlockData.remainTimeLength)
+                var remainTimeLength = getRemainTimeLength(buildBlockData)
+                buildBlock.hour = getHourPartString(remainTimeLength)
+                buildBlock.minute = getMinutePartString(remainTimeLength)
+                buildBlock.second = getSecondPartString(remainTimeLength)
             }
 
             buildBlock.updateWidth()
@@ -171,27 +188,51 @@ QtObject {
             buildBlock.showOkButton = !needSubmitFile
 
             if (buildBlockData.type === "timer") {
-                buildBlock.hour = getHourPartString(buildBlockData.remainTimeLength)
-                buildBlock.minute = getMinutePartString(buildBlockData.remainTimeLength)
-                buildBlock.second = getSecondPartString(buildBlockData.remainTimeLength)
+                var remainTimeLength = getRemainTimeLength(buildBlockData)
+                buildBlock.hour = getHourPartString(remainTimeLength)
+                buildBlock.minute = getMinutePartString(remainTimeLength)
+                buildBlock.second = getSecondPartString(remainTimeLength)
             }
 
             buildBlock.updateWidth()
         }
+    }
 
-        saveFlowGraph()
+    function updateBuildBlockCtrls() {
+        // 更新模块控件的状态
+        Object.entries(buildBlockCtrls).forEach(function([uuid, buildBlockCtrl]) {
+            var buildBlockData = getBuildBlockData(uuid)
+            if (buildBlockData === null) {
+                return
+            }
+
+            buildBlockCtrl.enabled = isLastBuildBlockFinish(buildBlockData, "")
+            if (buildBlockCtrl.enabled && buildBlockCtrl.type === "timer") {
+                var remainTimeLength = getRemainTimeLength(buildBlockData)
+                buildBlockCtrl.hour = getHourPartString(remainTimeLength)
+                buildBlockCtrl.minute = getMinutePartString(remainTimeLength)
+                buildBlockCtrl.second = getSecondPartString(remainTimeLength)
+            }
+        })
+
+        // 更新连接线的禁用/启用状态
+        buildBlockConnections.forEach(function(connection){
+            var beginBuildBlockData = getBuildBlockData(connection.beginBuildBlock.uuid)
+            if (beginBuildBlockData !== null) {
+                connection.enabled = beginBuildBlockData.finish
+            }
+        })
     }
 
     function deleteBuildBlock(buildBlockId) {
         // 删除模块控件
         if (buildBlockCtrls.hasOwnProperty(buildBlockId)) {
-            buildBlockCtrls[buildBlockId].parent.remove(buildBlockCtrls[buildBlockId])
             buildBlockCtrls[buildBlockId].destroy()
             delete buildBlockCtrls[buildBlockId]
         }
 
         // 删除该模块控件的连接线
-        toDeleteItems = buildBlockConnections.filter(function(item){
+        var toDeleteItems = buildBlockConnections.filter(function(item){
             if (item.beginBuildBlock.uuid === buildBlockId ||
                     item.endBuildBlock.uuid === buildBlockId) {
                 return true
@@ -205,8 +246,7 @@ QtObject {
             }
             return true
         })
-        toDeleteItems.forEach(function(item){
-            item.parent.remove(item)
+        toDeleteItems.forEach(function(item){            
             item.destroy()
         })
 
@@ -224,51 +264,57 @@ QtObject {
         buildBlocks = buildBlocks.filter(function(item){
             return item.uuid !== buildBlockId
         })
-
-        saveFlowGraph()
     }    
 
+    // 只要创建模块与上一个模块之间的连接线，下一个模块的连接线由下一个模块负责创建
     function createBuildBlockConnection(buildBlockData, parent) {
         if (buildBlockData.last.length === 0) {
             return null
         }
 
-        var endBuildBlock
-        if (buildBlockCtrls.has(buildBlockData.uuid)) {
-            endBuildBlock = buildBlockCtrls[buildBlockData.uuid]
+        var endBuildBlock = buildBlockCtrls[buildBlockData.uuid]
+        if (endBuildBlock === undefined) {
+            return null
         }
 
-
         for (var i=0; i<buildBlockData.last.length; i++) {
-            var beginBuildBlock
-            if (!buildBlockCtrls.has(buildBlockData.last[i])) {
+            var beginBuildBlock = buildBlockCtrls[buildBlockData.last[i]]
+            if (beginBuildBlock === undefined) {
                 continue
             }
 
-            beginBuildBlock = buildBlockCtrls[buildBlockData.last[i]]
-            connection = buildBlockConnectionComponent.createObject(parent)
-            connection.beginBuildBlock = beginBuildBlock
-            connection.endBuildBlock = endBuildBlock
+            var parames = {beginBuildBlock: beginBuildBlock, endBuildBlock: endBuildBlock}
+            var connection = buildBlockConnectionComponent.createObject(parent, parames)
             connection.enabled = isLastBuildBlockFinish(buildBlockData, buildBlockData.last[i])
+            connection.requestPaint()
             buildBlockConnections.push(connection)
         }
     }
 
-    function createBuildBlockConnectionV2(beginBuildBlockCtrl, endBuildBlockCtrl, parent) {
-        if (beginBuildBlockCtrl === null || endBuildBlockCtrl === null) {
+    function createBuildBlockConnectionV2(beginPoint, endPoint, parent) {
+        var beginBuildBlockData = null
+        var endBuildBlockData = null
+        var beginBuildBlockCtrl = null
+        var endBuildBlockCtrl = null
+        Object.entries(buildBlockCtrls).forEach(function([key, value]) {
+            var beginPointInBuildBlock = parent.mapToItem(value, beginPoint)
+            if (value.contains(beginPointInBuildBlock)) {
+                beginBuildBlockData = getBuildBlockData(key)
+                beginBuildBlockCtrl = value
+            }
+
+            var endPointInBuildBlock = parent.mapToItem(value, endPoint)
+            if (value.contains(endPointInBuildBlock)) {
+                endBuildBlockData = getBuildBlockData(key)
+                endBuildBlockCtrl = value
+            }
+        })
+
+        if (beginBuildBlockData === null || endBuildBlockData === null) {
             return
         }
 
-        var beginBuildBlockData = null
-        var endBuildBlockData = null
-        Object.entries(buildBlockCtrls).forEach(function([key, value]) {
-            if (value.uuid === beginBuildBlockCtrl.uuid) {
-                beginBuildBlockData = getBuildBlockData(key)
-            } else if (value.uuid === endBuildBlockCtrl.uuid) {
-                endBuildBlockData = getBuildBlockData(key)
-            }
-        })
-        if (beginBuildBlockData === null || endBuildBlockData === null) {
+        if (beginBuildBlockData.uuid === endBuildBlockData.uuid) {
             return
         }
 
@@ -281,6 +327,7 @@ QtObject {
         var params = {beginBuildBlock: beginBuildBlockCtrl, endBuildBlock: endBuildBlockCtrl}
         var connection = buildBlockConnectionComponent.createObject(parent, params)
         connection.enabled = beginBuildBlockData.finish
+        connection.requestPaint()
         buildBlockConnections.push(connection)
     }
 
@@ -298,8 +345,8 @@ QtObject {
                             "submitFiles": [],
                             "finishCondition": [],
                             "finishConditionGroup":"",
-                            "finishTimeLength": 3600,
-                            "remainTimeLength": 3600
+                            "finishTimeLength": 24,
+                            "beginTime": 0
                         }'
         var buildBlockData = JSON.parse(jsonString)
         buildBlockData.uuid = FlowManager.getUuid()
@@ -322,6 +369,36 @@ QtObject {
             iconFileName = icon.split('\\').pop()
         }
         buildBlockData.submitFiles.push({icon: iconFileName, filePath: fileName})
+    }
+
+    // 获取提交文件的剩余时长，单位秒
+    function getRemainTimeLength(buildBlockData) {
+        var now = Math.floor(Date.now() / 1000)
+        if (now <= buildBlockData.beginTime) {
+            return 0
+        }
+
+        var useTimeLength = now - buildBlockData.beginTime
+        if (useTimeLength >= buildBlockData.finishTimeLength*3600) {
+            return 0
+        } else {
+            return buildBlockData.finishTimeLength*3600 - useTimeLength
+        }
+    }
+
+    function onTimer() {
+        // 更新所有模块显示
+        updateBuildBlockCtrls()
+
+        // 自动保存配置文件
+        if (lastSaveTime === 0) {
+            lastSaveTime = Date.now()
+        } else {
+            if (Date.now() - lastSaveTime >= autoSaveInterval) {
+                saveFlowGraph()
+                lastSaveTime = Date.now()
+            }
+        }
     }
 
     // get hour string, like: 02
@@ -351,5 +428,16 @@ QtObject {
         var flowDataPath = FlowManager.getFlowDataPath(flowId)
         var absolutePath = "file:///"+flowDataPath+fileName
         return absolutePath
+    }
+
+    property Timer timer: Timer{
+        id: timer
+        interval: 100 // Timer interval in milliseconds
+        running: false // Start the timer immediately
+        repeat: true // Repeat the timer indefinitely
+
+        onTriggered: {
+            buildBlockManager.onTimer()
+        }
     }
 }

@@ -93,7 +93,7 @@ Window {
             }
 
             buildBlockData.finishTimeLength = parseInt(timeLengthTextEdit.text)
-            buildBlockData.remainTimeLength = finishTimeLength
+            buildBlockData.beginTime = Math.floor(Date.now() / 1000)
         }
     }
 
@@ -242,12 +242,12 @@ Window {
                         }
                     }
 
-                    // 时长单位：秒
+                    // 时长单位：时
                     Text {
                         id: secondText
                         width: 30
                         height: parent.height
-                        text: "(秒)"
+                        text: "(时)"
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
                         color: "white"

@@ -32,42 +32,10 @@ Rectangle {
 
     signal releasePin(BuildBlockBase buildBlock)
 
-
-    // 背景
-    Rectangle {
-        id: background
-        width: parent.width-6
-        height: parent.height-6
-        anchors.centerIn: parent
-        color: "#BEC8D7"
-        border.color: "#2D3447"
-        border.width: 2
-        radius: 10
-
-        // 上半部分
-        Item {
-            id: upperContent
-            width: background.width - background.radius*2
-            height: (background.height - background.radius*4)/2
-            anchors.top: background.top
-            anchors.topMargin: background.radius
-            anchors.horizontalCenter: parent.horizontalCenter
-        }
-
-        // 下半部分
-        Item {
-            id: lowerContent
-            width: background.width - background.radius*2
-            height: (background.height - background.radius*4)/2
-            anchors.bottom: background.bottom
-            anchors.bottomMargin: background.radius
-            anchors.horizontalCenter: parent.horizontalCenter
-        }
-    }
-
     // 鼠标拖动
     MouseArea {
         anchors.fill: parent
+        z: buildBlockBase.enabled?1:2
         acceptedButtons: Qt.LeftButton|Qt.RightButton
         property point clickPos: Qt.point(1,1)
 
@@ -117,6 +85,38 @@ Rectangle {
             }
         }
     }
+
+    // 背景
+    Rectangle {
+        id: background
+        width: parent.width-6
+        height: parent.height-6
+        anchors.centerIn: parent
+        color: "#BEC8D7"
+        border.color: "#2D3447"
+        border.width: 2
+        radius: 10
+
+        // 上半部分
+        Item {
+            id: upperContent
+            width: background.width - background.radius*2
+            height: (background.height - background.radius*4)/2
+            anchors.top: background.top
+            anchors.topMargin: background.radius
+            anchors.horizontalCenter: parent.horizontalCenter
+        }
+
+        // 下半部分
+        Item {
+            id: lowerContent
+            width: background.width - background.radius*2
+            height: (background.height - background.radius*4)/2
+            anchors.bottom: background.bottom
+            anchors.bottomMargin: background.radius
+            anchors.horizontalCenter: parent.horizontalCenter
+        }
+    }    
 
     Component {
         id: pinMouseAreaComponent

@@ -21,6 +21,7 @@ Window {
     }
 
     onClosing: {
+        buildBlockManager.saveFlowGraph()
         if (managerWindow !== null) {
             managerWindow.show()
         }
@@ -37,7 +38,7 @@ Window {
         var buildBlocks = buildBlockManager.loadFlowGraph(flowGraphWindow.flowId)
         buildBlocks.forEach(function(item) {
             var buildBlock = buildBlockManager.createBuildBlock(item, windowBase.contentArea)
-            initBuildBlockCtrl(buildBlock)
+            flowGraphWindow.initBuildBlockCtrl(buildBlock)
         })
 
         buildBlocks.forEach(function(item) {
@@ -78,9 +79,8 @@ Window {
         var editWindow = buildBlockEditWindowComponent.createObject(flowGraphWindow, params)
         editWindow.okClicked.connect(function(){
             buildBlockManager.addBuildBlockData(editWindow.buildBlockData)
-            var buidlBlock = buildBlockManager.createBuildBlock(editWindow.buildBlockData, windowBase.contentArea)
-            initBuildBlockCtrl(buildBlock)
-            buildBlockManager.saveFlowGraph()
+            var buildBlock = buildBlockManager.createBuildBlock(editWindow.buildBlockData, windowBase.contentArea)
+            flowGraphWindow.initBuildBlockCtrl(buildBlock)
         })
     }
 
@@ -113,9 +113,7 @@ Window {
 
     function onReleasePin(buildBlock) {
         mouseMovingArrowLine.visible = false
-        var beginItem = windowBase.contentArea.childAt(mouseMovingArrowLine.beginPoint.x, mouseMovingArrowLine.beginPoint.y)
-        var endItem = windowBase.contentArea.childAt(mouseMovingArrowLine.endPoint.x, mouseMovingArrowLine.endPoint.y)
-        buildBlockManager.createBuildBlockConnectionV2(beginItem, endItem, windowBase.contentArea)
+        buildBlockManager.createBuildBlockConnectionV2(mouseMovingArrowLine.beginPoint, mouseMovingArrowLine.endPoint, windowBase.contentArea)
     }
 
     WindowBase {
@@ -179,19 +177,6 @@ Window {
                         id: buildBlockEditWindowComponent
                         BuildBlockEditWindow {}
                     }
-                }
-            }
-
-            // 保存按钮
-            ButtonBase {
-                x: 15
-                y: 15
-                width: 60
-                height: 40
-                text: "保存"
-                font.pointSize: 14
-                onClicked: {
-                   buildBlockManager.saveFlowGraph()
                 }
             }
 
