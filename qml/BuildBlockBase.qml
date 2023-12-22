@@ -10,6 +10,8 @@ Rectangle {
 
     property string uuid: ""
 
+    property bool canUse: true
+
     property bool middleLineVisible: true
 
     property alias background: background
@@ -21,6 +23,8 @@ Rectangle {
     property alias leftPin: leftPinCtrl
 
     property alias rightPin: rightPinCtrl
+
+    property alias disableCoverPanel: disableCoverPanel
 
     signal deleteBuildBlock(string buildBlockId)
 
@@ -35,7 +39,7 @@ Rectangle {
     // 鼠标拖动
     MouseArea {
         anchors.fill: parent
-        z: buildBlockBase.enabled?1:2
+        z: buildBlockBase.canUse?0:1
         acceptedButtons: Qt.LeftButton|Qt.RightButton
         property point clickPos: Qt.point(1,1)
 
@@ -177,11 +181,13 @@ Rectangle {
         height: 2
         color: "#2D3447"
         anchors.verticalCenter: parent.verticalCenter
-    }
+    }    
+
 
     // 禁用状态盖板
     Rectangle {
-        visible: !parent.enabled
+        id: disableCoverPanel
+        visible: !buildBlockBase.canUse
         z: 1
         width: background.width
         height: background.height

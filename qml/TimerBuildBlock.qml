@@ -14,8 +14,13 @@ BasicBuildBlock {
     background.anchors.verticalCenter: background.parent.verticalCenter
     background.anchors.left: background.parent.left
     background.anchors.leftMargin: 3
+    disableCoverPanel.anchors.centerIn: undefined
+    disableCoverPanel.anchors.verticalCenter: background.parent.verticalCenter
+    disableCoverPanel.anchors.left: background.parent.left
+    disableCoverPanel.anchors.leftMargin: 3
 
     Rectangle {
+        id: timePanel
         parent: parent
         width: 30
         height: 90
@@ -104,5 +109,16 @@ BasicBuildBlock {
             }
         }
 
+    }
+
+    Rectangle {
+        visible: disableCoverPanel.visible
+        width: timePanel.width
+        height: timePanel.height
+        anchors.centerIn: timePanel
+        radius: timePanel.radius
+        border.width: timePanel.border.width
+        border.color: disableCoverPanel.border.color
+        color: disableCoverPanel.color
     }
 }

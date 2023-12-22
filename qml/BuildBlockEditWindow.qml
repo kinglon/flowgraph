@@ -93,7 +93,6 @@ Window {
             }
 
             buildBlockData.finishTimeLength = parseInt(timeLengthTextEdit.text)
-            buildBlockData.beginTime = Math.floor(Date.now() / 1000)
         }
     }
 

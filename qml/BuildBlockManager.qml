@@ -5,6 +5,8 @@ import Flow 1.0
 QtObject {
     property string flowId
 
+    property bool editable: false
+
     // 每个模块的数据信息
     property var buildBlocks: []
 
@@ -18,7 +20,7 @@ QtObject {
     property int autoSaveInterval: 5000
 
     // 上一次保存配置的时间戳，单位毫秒
-    property int lastSaveTime: 0
+    property var lastSaveTime
 
     property var textBuildBlockComponent
 
@@ -35,7 +37,6 @@ QtObject {
         basicBuildBlockComponent = Qt.createComponent("BasicBuildBlock.qml")
         timerBuildBlockComponent = Qt.createComponent("TimerBuildBlock.qml")
         buildBlockConnectionComponent = Qt.createComponent("BuildBlockConnection.qml")
-        timer.start()
     }
 
     // load flowgraph
@@ -77,24 +78,24 @@ QtObject {
         return null
     }
 
-    // 如果lastUuid为空，所有上个模块都完成才认为完成
-    function isLastBuildBlockFinish(buildBlockData, lastUuid) {
-        if (lastUuid !== "") {
-            var lastBuildBlockData = getBuildBlockData(lastUuid)
-            if (lastBuildBlockData === null) {
-                return true
-            } else {
-                return lastBuildBlockData.finish
-            }
-        } else {
-            buildBlockData.last.forEach(function(item){
-                var lastBuildBlockData = getBuildBlockData(item)
-                if (lastBuildBlockData !== null && !lastBuildBlockData.finish) {
-                    return false
-                }
-            })
+    // 判断指定的模块的前面模块是否已经完成
+    function isLastBuildBlockFinish(buildBlockData) {
+        if (buildBlockData.last.length === 0) {
             return true
         }
+
+        for (var i=0; i<buildBlockData.last.length; i++) {
+            var lastBuildBlockData = getBuildBlockData(buildBlockData.last[i])
+            if (lastBuildBlockData === null) {
+                continue
+            }
+
+            if (!lastBuildBlockData.finish || !isLastBuildBlockFinish(lastBuildBlockData)) {
+                return false
+            }
+        }
+
+        return true
     }
 
     function getDefaultFileIcon(filePath) {
@@ -155,8 +156,7 @@ QtObject {
         }
 
         buildBlock.x = buildBlockData.x
-        buildBlock.y = buildBlockData.y        
-        buildBlock.enabled = isLastBuildBlockFinish(buildBlockData, "")
+        buildBlock.y = buildBlockData.y
         buildBlockCtrls[buildBlockData.uuid] = buildBlock
         return buildBlock
     }
@@ -206,8 +206,15 @@ QtObject {
                 return
             }
 
-            buildBlockCtrl.enabled = isLastBuildBlockFinish(buildBlockData, "")
-            if (buildBlockCtrl.enabled && buildBlockCtrl.type === "timer") {
+            if (buildBlockData.type !== "text") {
+                buildBlockCtrl.canUse = editable || isLastBuildBlockFinish(buildBlockData)
+            }
+
+            if (buildBlockData.type === "timer" && buildBlockCtrl.canUse) {
+                if (buildBlockData.beginTime === 0) {
+                    buildBlockData.beginTime = Math.floor(Date.now() / 1000)
+                }
+
                 var remainTimeLength = getRemainTimeLength(buildBlockData)
                 buildBlockCtrl.hour = getHourPartString(remainTimeLength)
                 buildBlockCtrl.minute = getMinutePartString(remainTimeLength)
@@ -219,7 +226,12 @@ QtObject {
         buildBlockConnections.forEach(function(connection){
             var beginBuildBlockData = getBuildBlockData(connection.beginBuildBlock.uuid)
             if (beginBuildBlockData !== null) {
-                connection.enabled = beginBuildBlockData.finish
+                var enabled = editable || (isLastBuildBlockFinish(beginBuildBlockData) && beginBuildBlockData.finish)
+                var isChanged = connection.enabled===enabled
+                connection.enabled = enabled
+                if (isChanged) {
+                    connection.requestPaint()
+                }
             }
         })
     }
@@ -285,7 +297,6 @@ QtObject {
 
             var parames = {beginBuildBlock: beginBuildBlock, endBuildBlock: endBuildBlock}
             var connection = buildBlockConnectionComponent.createObject(parent, parames)
-            connection.enabled = isLastBuildBlockFinish(buildBlockData, buildBlockData.last[i])
             connection.requestPaint()
             buildBlockConnections.push(connection)
         }
@@ -325,8 +336,7 @@ QtObject {
         beginBuildBlockData.next = endBuildBlockData.uuid
         endBuildBlockData.last.push(beginBuildBlockData.uuid)
         var params = {beginBuildBlock: beginBuildBlockCtrl, endBuildBlock: endBuildBlockCtrl}
-        var connection = buildBlockConnectionComponent.createObject(parent, params)
-        connection.enabled = beginBuildBlockData.finish
+        var connection = buildBlockConnectionComponent.createObject(parent, params)        
         connection.requestPaint()
         buildBlockConnections.push(connection)
     }
@@ -391,7 +401,7 @@ QtObject {
         updateBuildBlockCtrls()
 
         // 自动保存配置文件
-        if (lastSaveTime === 0) {
+        if (lastSaveTime === undefined) {
             lastSaveTime = Date.now()
         } else {
             if (Date.now() - lastSaveTime >= autoSaveInterval) {
@@ -428,16 +438,5 @@ QtObject {
         var flowDataPath = FlowManager.getFlowDataPath(flowId)
         var absolutePath = "file:///"+flowDataPath+fileName
         return absolutePath
-    }
-
-    property Timer timer: Timer{
-        id: timer
-        interval: 100 // Timer interval in milliseconds
-        running: false // Start the timer immediately
-        repeat: true // Repeat the timer indefinitely
-
-        onTriggered: {
-            buildBlockManager.onTimer()
-        }
     }
 }

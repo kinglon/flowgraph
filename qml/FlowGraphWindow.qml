@@ -18,6 +18,7 @@ Window {
     BuildBlockManager {
         id: buildBlockManager
         flowId: flowGraphWindow.flowId
+        editable: flowGraphWindow.editable
     }
 
     onClosing: {
@@ -44,6 +45,8 @@ Window {
         buildBlocks.forEach(function(item) {
             buildBlockManager.createBuildBlockConnection(item, windowBase.contentArea)
         })
+
+        timer.start()
     }
 
     function initBuildBlockCtrl(buildBlockCtrl) {
@@ -75,6 +78,10 @@ Window {
         buildBlockData.x = x
         buildBlockData.y = y
         buildBlockData.type = type
+        if (type === "text") {
+            buildBlockData.finish = true
+        }
+
         var params = {buildBlockData: buildBlockData, buildBlockManager: buildBlockManager}
         var editWindow = buildBlockEditWindowComponent.createObject(flowGraphWindow, params)
         editWindow.okClicked.connect(function(){
@@ -201,6 +208,17 @@ Window {
                 var filePath = fileDialog.fileUrl.toString()
                 fileDialog.selectFileFinish(filePath)
             }
+        }
+    }
+
+    Timer {
+        id: timer
+        interval: 100 // Timer interval in milliseconds
+        running: false // Start the timer immediately
+        repeat: true // Repeat the timer indefinitely
+
+        onTriggered: {
+            buildBlockManager.onTimer()
         }
     }
 }
