@@ -1,4 +1,4 @@
-import QtQuick 2.15
+﻿import QtQuick 2.15
 import QtQuick.Controls 2.15
 
 Canvas {
@@ -20,7 +20,7 @@ Canvas {
         var endPoint = canvas.endPoint
 
         // Calculate arrowhead position and angle
-        var arrowheadSize = 15;
+        var arrowheadSize = 10;
         var angle = Math.atan2(endPoint.y - startPoint.y, endPoint.x - startPoint.x);
         var arrowheadPosition = Qt.point(startPoint.x + (endPoint.x - startPoint.x) / 2, startPoint.y + (endPoint.y - startPoint.y) / 2);
 

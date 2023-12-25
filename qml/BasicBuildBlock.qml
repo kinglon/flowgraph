@@ -3,14 +3,28 @@ import QtQuick.Controls 2.15
 
 BuildBlockBase {
     id: basicBuildBlock
+    width: initWidth
+
     property int initWidth: 100
     property int rowSpacing: 5
-    property alias lowerRow: lowerRow
-    width: initWidth
-    property bool showOkButton: true
     property int itemWidth: 50
 
+    property bool showOkButton: true
+
+    property alias lowerRow: lowerRow
+
+    property alias submitButton: submitButton
+
+    property alias okButton: okButton
+
+    // 点击提交文件按钮
     signal submitFile(BuildBlockBase buildBlock)
+
+    // 删除提交的文件
+    signal deleteSubmitFile(BuildBlockBase buildBlock, string filePath)
+
+    // 点击确定按钮
+    signal okButtonClicked(BuildBlockBase buildBlock)
 
     // 上半部分文件列表
     Row {
@@ -70,6 +84,9 @@ BuildBlockBase {
         width: 60
         text: "确定"
         font.pointSize: 12
+        onClicked: {
+            basicBuildBlock.okButtonClicked(basicBuildBlock)
+        }
     }
 
     Component {
@@ -87,14 +104,15 @@ BuildBlockBase {
             icon: icon,
             filePath: filePath,
             width: basicBuildBlock.itemWidth,
-            height: upperRow.height
+            height: upperRow.height,
+            editable: false
         }
         childComponent.createObject(upperRow, params)
         updateWidth()
     }
 
     function clearLowerFile() {
-        lowerRow.children = [lowerRow.children[lowerRow.children.length-1]]
+        lowerRow.children = []
         updateWidth()
     }
 
@@ -103,9 +121,15 @@ BuildBlockBase {
             icon: icon,
             filePath: filePath,
             width: basicBuildBlock.itemWidth,
-            height: lowerRow.height
+            height: lowerRow.height,
+            editable: true
         }
-        childComponent.createObject(lowerRow, params)
+        var fileThumb = childComponent.createObject(lowerRow, params)
+        fileThumb.deleteFile.connect(function(filePath) {
+            basicBuildBlock.deleteSubmitFile(basicBuildBlock, filePath)
+            fileThumb.destroy()
+            updateWidth()
+        })
         updateWidth()
     }
 

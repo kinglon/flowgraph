@@ -142,8 +142,10 @@ QtObject {
                 var absolutePath = toAbsolutePath(item.filePath)
                 buildBlock.addLowerFile(icon, absolutePath)
             })
+
             var needSubmitFile = buildBlockData.finishCondition.length > 0
             buildBlock.showOkButton = !needSubmitFile
+            buildBlock.okButton.enabled = !buildBlockData.finish
 
             if (buildBlockData.type === "timer") {
                 var remainTimeLength = getRemainTimeLength(buildBlockData)
@@ -157,6 +159,7 @@ QtObject {
 
         buildBlock.x = buildBlockData.x
         buildBlock.y = buildBlockData.y
+        buildBlock.editable = editable
         buildBlockCtrls[buildBlockData.uuid] = buildBlock
         return buildBlock
     }
@@ -278,6 +281,28 @@ QtObject {
         })
     }    
 
+    // 删除指定模块的后连接线
+    function deleteNextConnection(buildBlockId) {
+        // 删除连接线并销毁
+        buildBlockConnections = buildBlockConnections.filter(function(connection) {
+            if (connection.beginBuildBlock.uuid === buildBlockId) {
+                connection.destroy()
+                return false
+            }
+            return true
+        })
+
+        // 修改模块的前后模块关系
+        buildBlocks.forEach(function(item){
+            if (item.next === buildBlockId) {
+                item.next = ""
+            }
+            item.last = item.last.filter(function(lastUuid){
+                return lastUuid !== buildBlockId
+            })
+        })
+    }
+
     // 只要创建模块与上一个模块之间的连接线，下一个模块的连接线由下一个模块负责创建
     function createBuildBlockConnection(buildBlockData, parent) {
         if (buildBlockData.last.length === 0) {
@@ -381,6 +406,61 @@ QtObject {
         buildBlockData.submitFiles.push({icon: iconFileName, filePath: fileName})
     }
 
+    // 检查提交的文件是否已经满足完成条件
+    function checkIfFinish(buildBlockData) {
+        var conditions = []
+        buildBlockData.finishCondition.forEach(function(condition){
+            if (condition.groupName === buildBlockData.finishConditionGroup) {
+                conditions.push(utility.deepCopy(condition))
+            }
+        })
+
+        if (conditions.length === 0) {
+            return true
+        }
+
+        buildBlockData.submitFiles.forEach(function(filePath) {
+            var extension = utility.getFileExtension(filePath)
+            var size = utility.getFileSize(filePath)
+            for (var i=0; i<conditions.length; i++) {
+                if (conditions[i].count > 0
+                        && conditions[i].suffix === extension
+                        && size >= conditions[i].sizeMin*1024*1024
+                        && size <= conditions[i].sizeMax*1024*1024) {
+                    conditions[i].count -= 1
+                    break
+                }
+            }
+        })
+
+        for (var i=0; i<conditions.length; i++) {
+            if (conditions[i].count > 0) {
+                return false
+            }
+        }
+
+        return true
+    }
+
+    // 计算容纳所有模块所需要的大小
+    function calculateBuildBlockContainerSize() {
+        var size = Qt.point(0, 0)
+        buildBlocks.forEach(function(buildBlock) {
+            if (buildBlock.x > size.x) {
+                size.x = buildBlock.x
+            }
+            if (buildBlock.y > size.y) {
+                size.y = buildBlock.y
+            }
+        })
+
+        // 加上默认模块宽度和高度
+        size.x += 200
+        size.y += 200
+
+        return size
+    }
+
     // 获取提交文件的剩余时长，单位秒
     function getRemainTimeLength(buildBlockData) {
         var now = Math.floor(Date.now() / 1000)
@@ -396,9 +476,39 @@ QtObject {
         }
     }
 
+    // 检测定时模块是否已经超时，如果超时清除提交文件，更新完成条件
+    function checkIfTimeout() {
+        var now = Math.floor(Date.now() / 1000)
+        buildBlocks.forEach(function(buildBlockData) {
+            if (buildBlockData.type === "timer"
+                    && buildBlockData.beginTime > 0
+                    && now - buildBlockData.beginTime > buildBlockData.finishTimeLength*3600) {
+                buildBlockData.beginTime = 0
+                buildBlockData.submitFiles = []
+
+                var conditionGroups = []
+                buildBlockData.finishCondition.forEach(function(condition) {
+                    if (!conditionGroups.includes(condition)) {
+                        conditionGroups.push(condition)
+                    }
+                })
+
+                if (conditionGroups.length > 0) {
+                    var nextIndex = (conditionGroups.indexOf(buildBlockData.finishConditionGroup)+1)%conditionGroups.length
+                    buildBlockData.finishConditionGroup = conditionGroups[nextIndex].groupName
+                }
+
+                updateBuildBlock(buildBlockData)
+            }
+        })
+    }
+
     function onTimer() {
         // 更新所有模块显示
         updateBuildBlockCtrls()
+
+        // 检测定时模块是否已经超时
+        checkIfTimeout()
 
         // 自动保存配置文件
         if (lastSaveTime === undefined) {

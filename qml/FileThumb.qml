@@ -10,6 +10,10 @@ Item {
 
     property bool useSourceSize: true
 
+    property bool editable: false
+
+    signal deleteFile(string filePath)
+
     Image {
         id: image
         source: fileThumb.icon
@@ -23,11 +27,25 @@ Item {
             acceptedButtons: Qt.RightButton|Qt.LeftButton
             onReleased: {
                 if (mouse.button === Qt.LeftButton) {
-                    // todo by yejinlong, open the local file
-                    console.log("left button click")
+                    Qt.openUrlExternally(fileThumb.filePath)
                 } else if (mouse.button === Qt.RightButton) {
-                    // todo by yejinlong, show delete menu
-                    console.log("Right mouse button clicked on the image.")
+                    if (fileThumb.editable) {
+                        contextMenu.popup()
+                    }
+                }
+            }
+
+            Menu {
+                id: contextMenu
+                width: 60
+
+                property int fontSize: 15
+                MenuItem {
+                    text: "删除"
+                    font.pointSize: contextMenu.fontSize
+                    onTriggered: {
+                        fileThumb.deleteFile(fileThumb.filePath)
+                    }
                 }
             }
         }

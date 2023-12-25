@@ -91,6 +91,10 @@ Window {
             for (i=0; i<submitConditionModel.count; i++) {
                 buildBlockData.finishCondition.push(submitConditionModel.get(i))
             }
+            buildBlockData.finishConditionGroup = ""
+            if (submitConditionModel.count > 0) {
+                buildBlockData.finishConditionGroup = submitConditionModel.get(0).groupName
+            }
 
             buildBlockData.finishTimeLength = parseInt(timeLengthTextEdit.text)
         }
@@ -149,12 +153,24 @@ Window {
                 contentWidth: fileListModel.count*height
                 model: fileListModel
                 clip: true
-                delegate: FileThumb {
+                delegate: FileThumb {                    
                     width: height
                     height: fileListView.height
                     icon: model.icon
                     filePath: model.filePath
                     useSourceSize: false
+                    editable: true
+
+                    Connections {
+                        function onDeleteFile(filePath) {
+                            for (var i=0; i<fileListModel.count; i++) {
+                                if (fileListModel[i].filePath === filePath) {
+                                    fileListModel.remove(i, 1)
+                                    break
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
@@ -171,6 +187,7 @@ Window {
                     font.pointSize: 12
                     textMargin: 5
                     focus: true
+                    inputMethodHints: Qt.ImhMultiLine
                 }
 
                 ButtonBase {
@@ -462,7 +479,7 @@ Window {
                             font.pointSize: 10
                             borderRadius: 3
                             onClicked: {
-                                console.log("delete item")
+                                submitConditionModel.remove(index, 1)
                             }
                         }
                     }

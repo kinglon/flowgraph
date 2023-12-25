@@ -2,6 +2,7 @@
 import QtQuick.Window 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Dialogs 1.3
+import Flow 1.0
 
 Window {
     id: flowGraphWindow
@@ -13,13 +14,7 @@ Window {
     height: 600
     property bool editable: false
     property string flowId: ''
-    property var managerWindow: null
-
-    BuildBlockManager {
-        id: buildBlockManager
-        flowId: flowGraphWindow.flowId
-        editable: flowGraphWindow.editable
-    }
+    property var managerWindow: null    
 
     onClosing: {
         buildBlockManager.saveFlowGraph()
@@ -35,15 +30,19 @@ Window {
     }
 
     Component.onCompleted: {
+        if (flowGraphWindow.flowId === "") {
+            flowGraphWindow.flowId = FlowManager.flows[0].id
+        }
+
         buildBlockManager.init()
         var buildBlocks = buildBlockManager.loadFlowGraph(flowGraphWindow.flowId)
         buildBlocks.forEach(function(item) {
-            var buildBlock = buildBlockManager.createBuildBlock(item, windowBase.contentArea)
+            var buildBlock = buildBlockManager.createBuildBlock(item, contentPanel.contentItem)
             flowGraphWindow.initBuildBlockCtrl(buildBlock)
         })
 
         buildBlocks.forEach(function(item) {
-            buildBlockManager.createBuildBlockConnection(item, windowBase.contentArea)
+            buildBlockManager.createBuildBlockConnection(item, contentPanel.contentItem)
         })
 
         timer.start()
@@ -55,8 +54,57 @@ Window {
         buildBlockCtrl.pressPin.connect(onPressPin)
         buildBlockCtrl.dragPin.connect(onDragPin)
         buildBlockCtrl.releasePin.connect(onReleasePin)
+
+        buildBlockCtrl.deleteNextConnection.connect(buildBlockManager.deleteNextConnection)
+
         if (buildBlockCtrl.submitFile !== undefined) {
-            buildBlockCtrl.submitFile.connect(function(buildBlock) {
+            buildBlockCtrl.submitFile.connect(onSubmitFile)
+        }
+
+        if (buildBlockCtrl.deleteSubmitFile !== undefined) {
+            buildBlockCtrl.deleteSubmitFile.connect(function(buildBlockCtrl, filePath) {
+                var buildBlockData = buildBlockManager.getBuildBlockData(buildBlockCtrl.uuid)
+                if (buildBlockData !== null) {
+                    buildBlockData.submitFiles = buildBlockData.submitFiles.filter(function(submitFile) {
+                        return submitFile.filePath !== filePath
+                    })
+                }
+            })
+        }
+
+        if (buildBlockCtrl.okButtonClicked !== undefined) {
+            buildBlockCtrl.okButtonClicked.connect(function(buildBlockCtrl){
+                var buildBlockData = buildBlockManager.getBuildBlockData(buildBlockCtrl.uuid)
+                if (buildBlockData !== null) {
+                    buildBlockData.finish = true
+                    buildBlockCtrl.okButton.enabled = false
+                }
+            })
+        }
+    }
+
+    function onSubmitFile(buildBlock) {
+        var buildBlockData = buildBlockManager.getBuildBlockData(buildBlock.uuid)
+        if (buildBlockData === null) {
+            return
+        }
+
+        if (buildBlockData.finish) {
+            var canntSubmitParam = {
+                message: "任务已完成，无法提交",
+                showCancelButton: false
+            }
+            messageBoxComponent.createObject(flowGraphWindow, canntSubmitParam)
+        } else {
+            if (buildBlockManager.checkIfFinish(buildBlockData)) {
+                var askFinishParam = {
+                    message: "确定提交所有文件，完成任务？"
+                }
+                var messageBox = messageBoxComponent.createObject(flowGraphWindow, askFinishParam)
+                messageBox.okClicked.connect(function() {
+                    buildBlockData.finish = true
+                })
+            } else {
                 var fileDialog = fileDialogComponent.createObject(flowGraphWindow)
                 fileDialog.selectFileFinish.connect(function(filePath) {
                     var newFilePath = buildBlockManager.copyFile(filePath)
@@ -67,9 +115,18 @@ Window {
                     var icon = buildBlockManager.getFileIcon(newFilePath)
                     buildBlock.addLowerFile(icon, newFilePath)
                     buildBlockManager.submitFile(buildBlock.uuid, icon, newFilePath)
+                    if (buildBlockManager.checkIfFinish(buildBlockData)) {
+                        var askFinishParam = {
+                            message: "确定提交所有文件，完成任务？"
+                        }
+                        messageBoxComponent.createObject(flowGraphWindow, askFinishParam)
+                        messageBoxComponent.okClicked.connect(function() {
+                            buildBlockData.finish = true
+                        })
+                    }
                 })
                 fileDialog.open()
-            })
+            }
         }
     }
 
@@ -86,7 +143,7 @@ Window {
         var editWindow = buildBlockEditWindowComponent.createObject(flowGraphWindow, params)
         editWindow.okClicked.connect(function(){
             buildBlockManager.addBuildBlockData(editWindow.buildBlockData)
-            var buildBlock = buildBlockManager.createBuildBlock(editWindow.buildBlockData, windowBase.contentArea)
+            var buildBlock = buildBlockManager.createBuildBlock(editWindow.buildBlockData, contentPanel.contentItem)
             flowGraphWindow.initBuildBlockCtrl(buildBlock)
         })
     }
@@ -109,7 +166,7 @@ Window {
     }
 
     function onDragPin(buildBlock, x, y) {
-        var pos = buildBlock.mapToItem(windowBase.contentArea, x, y)
+        var pos = buildBlock.mapToItem(contentPanel.contentItem, x, y)
         if (!mouseMovingArrowLine.visible) {
             mouseMovingArrowLine.visible = true
             mouseMovingArrowLine.beginPoint = pos
@@ -120,16 +177,48 @@ Window {
 
     function onReleasePin(buildBlock) {
         mouseMovingArrowLine.visible = false
-        buildBlockManager.createBuildBlockConnectionV2(mouseMovingArrowLine.beginPoint, mouseMovingArrowLine.endPoint, windowBase.contentArea)
+        buildBlockManager.createBuildBlockConnectionV2(mouseMovingArrowLine.beginPoint, mouseMovingArrowLine.endPoint, contentPanel.contentItem)
+    }
+
+    function onTimer() {
+        // 调整画布大小
+        var size = buildBlockManager.calculateBuildBlockContainerSize()
+        if (size.x > contentPanel.contentWidth) {
+            contentPanel.contentWidth = size.x
+        }
+        if (size.y > contentPanel.contentHeight) {
+            contentPanel.contentHeight = size.y
+        }
+    }
+
+    BuildBlockManager {
+        id: buildBlockManager
+        flowId: flowGraphWindow.flowId
+        editable: flowGraphWindow.editable
     }
 
     WindowBase {
         id: windowBase
         window: flowGraphWindow
         title: flowGraphWindow.title
-        Item {
+        Flickable {
+            id: contentPanel
             parent: windowBase.contentArea
             anchors.fill: parent
+            contentWidth: width
+            contentHeight: height
+            clip: true
+            boundsMovement: Flickable.StopAtBounds
+            boundsBehavior: Flickable.StopAtBounds
+            interactive: false
+
+            ScrollBar.horizontal: ScrollBar {
+                active: true
+            }
+
+            ScrollBar.vertical: ScrollBar {
+                active: true
+            }
 
             Image {
                 anchors.fill: parent
@@ -211,14 +300,20 @@ Window {
         }
     }
 
+    Component {
+        id: messageBoxComponent
+        MessageBox {}
+    }
+
     Timer {
         id: timer
-        interval: 100 // Timer interval in milliseconds
+        interval: 1000 // Timer interval in milliseconds
         running: false // Start the timer immediately
         repeat: true // Repeat the timer indefinitely
 
         onTriggered: {
             buildBlockManager.onTimer()
+            flowGraphWindow.onTimer()
         }
     }
 }

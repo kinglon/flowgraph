@@ -1,4 +1,5 @@
 ﻿import QtQuick 2.0
+import Flow 1.0
 
 QtObject {
     function deepCopy(obj) {
@@ -21,6 +22,11 @@ QtObject {
       const lowercaseExtension = extension.toLowerCase();
 
       return lowercaseExtension;
+    }
+
+    // 返回指定文件的大小（字节数）
+    function getFileSize(filePath) {
+        return QmlUtility.getFileSize(filePath)
     }
 
     function isImageFile(extension) {

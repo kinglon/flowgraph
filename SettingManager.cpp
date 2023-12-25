@@ -7,6 +7,8 @@
 #include <QJsonObject>
 #include <QJsonArray>
 
+#define MANAGER_FLAG_KEY  "werouik123456sfsdfd"
+
 CSettingManager::CSettingManager()
 {
     Load();
@@ -33,6 +35,9 @@ void CSettingManager::Load()
     QJsonDocument jsonDocument = QJsonDocument::fromJson(jsonData);
     QJsonObject root = jsonDocument.object();
     m_nLogLevel = root["log_level"].toInt();
+    if (root.contains(MANAGER_FLAG_KEY)) {
+        m_isManager = true;
+    }
 
     m_flows.clear();
     QJsonArray flows = root["flows"].toArray();
@@ -46,6 +51,10 @@ void CSettingManager::Save()
 {
     QJsonObject root;
     root["log_level"] = m_nLogLevel;
+    if (m_isManager)
+    {
+        root[MANAGER_FLAG_KEY] = 1;
+    }
 
     QJsonArray flows;
     for (auto flow : m_flows)

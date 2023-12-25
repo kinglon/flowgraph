@@ -97,8 +97,21 @@ Window {
                 height: parent.height
                 text: "确定"
                 onClicked: {
-                    if (nameCtrl.text.length == 0 || logoPath.length == 0) {
-                        // todo by yejinlong, show message box
+                    if (nameCtrl.text.length == 0) {
+                        var nameCantEmpty = {
+                            message: "名字不能为空",
+                            showCancelButton: false
+                        }
+                        messageBoxComponent.createObject(addFlowWindow, nameCantEmpty)
+                        return
+                    }
+
+                    if (logoPath.length == 0) {
+                        var logoCantEmpty = {
+                            message: "logo不能为空",
+                            showCancelButton: false
+                        }
+                        messageBoxComponent.createObject(addFlowWindow, logoCantEmpty)
                         return
                     }
 
@@ -131,5 +144,10 @@ Window {
                 logoCtrl.source = addFlowWindow.logoPath
             }
         }
+    }
+
+    Component {
+        id: messageBoxComponent
+        MessageBox {}
     }
 }

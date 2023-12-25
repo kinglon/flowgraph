@@ -14,6 +14,8 @@ public:
 public:
     int GetLogLevel() { return m_nLogLevel; }
 
+    bool IsManager() { return m_isManager; }
+
     QVector<QString> GetFlows() { return m_flows;}
 
     void SetFlows(const QVector<QString>& flows);
@@ -25,6 +27,9 @@ private:
 
 private:
     int m_nLogLevel = 2;  // debug
+
+    // 标识是否为管理端
+    bool m_isManager = false;
 
     QVector<QString> m_flows;
 };

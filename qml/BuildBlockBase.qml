@@ -10,7 +10,10 @@ Rectangle {
 
     property string uuid: ""
 
+    // 标志模块是可以正常提交文件
     property bool canUse: true
+
+    property bool editable: false
 
     property bool middleLineVisible: true
 
@@ -30,6 +33,8 @@ Rectangle {
 
     signal editBuildBlock(string buildBlockId)
 
+    signal deleteNextConnection(string buildBlockId)
+
     signal pressPin(BuildBlockBase buildBlock)
 
     signal dragPin(BuildBlockBase buildBlock, real x, real y)
@@ -45,7 +50,7 @@ Rectangle {
 
         Menu {
             id: contextMenu
-            width: 60
+            width: 140
 
             property int fontSize: 15
             MenuItem {
@@ -62,6 +67,13 @@ Rectangle {
                     buildBlockBase.deleteBuildBlock(uuid)
                 }
             }
+            MenuItem {
+                text: "删除后连接线"
+                font.pointSize: contextMenu.fontSize
+                onTriggered: {
+                    buildBlockBase.deleteNextConnection(uuid)
+                }
+            }
         }
 
         onPressed: {
@@ -70,7 +82,7 @@ Rectangle {
             }
         }
         onReleased: {
-            if (mouse.button == Qt.RightButton) {
+            if (mouse.button == Qt.RightButton && buildBlockBase.editable) {
                 contextMenu.popup()
             }
         }

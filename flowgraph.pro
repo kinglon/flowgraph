@@ -14,7 +14,8 @@ SOURCES += \
         Utility/ImPath.cpp \
         Utility/LogBuffer.cpp \
         Utility/LogUtil.cpp \
-        main.cpp
+        main.cpp \
+        qmlutility.cpp
 
 RESOURCES += qml.qrc
 
@@ -38,10 +39,13 @@ HEADERS += \
     Utility/ImPath.h \
     Utility/LogBuffer.h \
     Utility/LogMacro.h \
-    Utility/LogUtil.h
+    Utility/LogUtil.h \
+    qmlutility.h
 
 INCLUDEPATH += Utility
 
 CONFIG += qmltypes
 QML_IMPORT_NAME = Flow
 QML_IMPORT_MAJOR_VERSION = 1
+
+QMAKE_CXXFLAGS += -DQT_MESSAGELOGCONTEXT

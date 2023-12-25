@@ -7,6 +7,30 @@
 
 CLogUtil* g_dllLog = nullptr;
 
+QtMessageHandler originalHandler = nullptr;
+
+void logToFile(QtMsgType type, const QMessageLogContext &context, const QString &msg)
+{
+    if (g_dllLog)
+    {
+        ELogLevel logLevel = ELogLevel::LOG_LEVEL_ERROR;
+        if (type == QtMsgType::QtDebugMsg)
+        {
+            logLevel = ELogLevel::LOG_LEVEL_DEBUG;
+        }
+        else if (type == QtMsgType::QtInfoMsg)
+        {
+            logLevel = ELogLevel::LOG_LEVEL_INFO;
+        }
+        g_dllLog->Log(context.file? context.file: "", context.line, logLevel, msg.toStdWString().c_str());
+    }
+
+    if (originalHandler)
+    {
+        (*originalHandler)(type, context, msg);
+    }
+}
+
 int main(int argc, char *argv[])
 {
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
@@ -33,9 +57,13 @@ int main(int argc, char *argv[])
 
     int nLogLevel = CSettingManager::GetInstance()->GetLogLevel();
     g_dllLog->SetLogLevel((ELogLevel)nLogLevel);
+    originalHandler = qInstallMessageHandler(logToFile);
 
     QQmlApplicationEngine engine;
-    const QUrl url(QStringLiteral("qrc:/qml/ManagerWindow.qml"));
+    QUrl url(QStringLiteral("qrc:/qml/ManagerWindow.qml"));
+    if (!CSettingManager::GetInstance()->IsManager()) {
+        url.setUrl("qrc:/qml/FlowGraphWindow.qml");
+    }
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,
                      &app, [url](QObject *obj, const QUrl &objUrl) {
         if (!obj && url == objUrl)
