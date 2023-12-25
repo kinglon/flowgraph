@@ -40,5 +40,6 @@
         <file>qml/AddBuildBlock.qml</file>
         <file>qml/MessageBox.qml</file>
         <file>qml/OkBuildBlock.qml</file>
+        <file>qml/TextInputWindow.qml</file>
     </qresource>
 </RCC>

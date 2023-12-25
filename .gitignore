@@ -54,14 +54,7 @@ compile_commands.json
 *_qmlcache.qrc
 
 # my
-ds/*
-!ds/FlowGraph/
-ds/FlowGraph/*
-!ds/FlowGraph/content
-ds/FlowGraph/content/*
-!ds/FlowGraph/content/js/
-!ds/FlowGraph/content/qml/
-!ds/FlowGraph/content/res/
+ds
 
 doc/*
 !doc/flowgraph.json

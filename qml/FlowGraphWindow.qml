@@ -137,15 +137,23 @@ Window {
         buildBlockData.type = type
         if (type === "text") {
             buildBlockData.finish = true
+            var textInputWindowParam = {title: "添加模块", content: "", context: buildBlockData}
+            var textInputWindow = textInputWindowComponent.createObject(flowGraphWindow, textInputWindowParam)
+            textInputWindow.okClicked.connect(function() {
+                textInputWindow.context.text = textInputWindow.content
+                buildBlockManager.addBuildBlockData(textInputWindow.context)
+                var buildBlock = buildBlockManager.createBuildBlock(textInputWindow.context, contentPanel.contentItem)
+                flowGraphWindow.initBuildBlockCtrl(buildBlock)
+            })
+        } else {
+            var editWindowParam = {buildBlockData: buildBlockData, buildBlockManager: buildBlockManager}
+            var editWindow = buildBlockEditWindowComponent.createObject(flowGraphWindow, editWindowParam)
+            editWindow.okClicked.connect(function(){
+                buildBlockManager.addBuildBlockData(editWindow.buildBlockData)
+                var buildBlock = buildBlockManager.createBuildBlock(editWindow.buildBlockData, contentPanel.contentItem)
+                flowGraphWindow.initBuildBlockCtrl(buildBlock)
+            })
         }
-
-        var params = {buildBlockData: buildBlockData, buildBlockManager: buildBlockManager}
-        var editWindow = buildBlockEditWindowComponent.createObject(flowGraphWindow, params)
-        editWindow.okClicked.connect(function(){
-            buildBlockManager.addBuildBlockData(editWindow.buildBlockData)
-            var buildBlock = buildBlockManager.createBuildBlock(editWindow.buildBlockData, contentPanel.contentItem)
-            flowGraphWindow.initBuildBlockCtrl(buildBlock)
-        })
     }
 
     function editBuildBlock(buildBlockId) {
@@ -154,11 +162,20 @@ Window {
             return
         }
 
-        var params = {buildBlockData: buildBlockData, buildBlockManager: buildBlockManager}
-        var editWindow = buildBlockEditWindowComponent.createObject(flowGraphWindow, params)
-        editWindow.okClicked.connect(function(){
-            buildBlockManager.updateBuildBlock(buildBlockData)
-        })
+        if (buildBlockData.type === "text") {
+            var textInputWindowParam = {title: "编辑模块", content: buildBlockData.text, context: buildBlockData}
+            var textInputWindow = textInputWindowComponent.createObject(flowGraphWindow, textInputWindowParam)
+            textInputWindow.okClicked.connect(function() {
+                textInputWindow.context.text = textInputWindow.content
+                buildBlockManager.updateBuildBlock(textInputWindow.context)
+            })
+        } else {
+            var editWindowParam = {title: "编辑模块", buildBlockData: buildBlockData, buildBlockManager: buildBlockManager}
+            var editWindow = buildBlockEditWindowComponent.createObject(flowGraphWindow, editWindowParam)
+            editWindow.okClicked.connect(function(){
+                buildBlockManager.updateBuildBlock(buildBlockData)
+            })
+        }
     }
 
     function onPressPin(buildBlock) {
@@ -267,12 +284,7 @@ Window {
                         onTriggered: {
                             flowGraphWindow.addBuildBlock("timer", contentMouseArea.mouseXWhenClick, contentMouseArea.mouseYWhenClick)
                         }
-                    }
-
-                    Component {
-                        id: buildBlockEditWindowComponent
-                        BuildBlockEditWindow {}
-                    }
+                    }                    
                 }
             }
 
@@ -303,6 +315,16 @@ Window {
     Component {
         id: messageBoxComponent
         MessageBox {}
+    }
+
+    Component {
+        id: buildBlockEditWindowComponent
+        BuildBlockEditWindow {}
+    }
+
+    Component {
+        id: textInputWindowComponent
+        TextInputWindow {}
     }
 
     Timer {
