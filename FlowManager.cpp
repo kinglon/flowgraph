@@ -111,6 +111,48 @@ bool FlowManager::addFlowItem(FlowItem* flowItem)
     return true;
 }
 
+bool FlowManager::updateFlowItem(FlowItem* flowItem)
+{
+    for (int i=0; i<m_flows.size(); i++)
+    {
+        if (m_flows[i]->id() == flowItem->id())
+        {
+            m_flows[i]->setName(flowItem->name());
+            if (m_flows[i]->logoFilePath() != flowItem->logoFilePath())
+            {
+                // remove the protocal: file://
+                QString logoFilePath = flowItem->logoFilePath();
+                QUrl url(logoFilePath);
+                if (url.isLocalFile())
+                {
+                    logoFilePath = url.toLocalFile();
+                }
+
+                // copy logo file
+                QFileInfo fileInfo(logoFilePath);
+                QString logoFileName = getUuid()+'.'+fileInfo.suffix();
+                QString flowDataPath = getFlowDataPath(flowItem->id());
+                QString flowLogoFilePath = flowDataPath + logoFileName;
+                if (!QFile::copy(logoFilePath, flowLogoFilePath))
+                {
+                    LOG_ERROR(L"failed to copy logo file from %s to %s",
+                              flowItem->logoFilePath().toStdWString().c_str(),
+                              flowLogoFilePath.toStdWString().c_str());
+                    return false;
+                }
+                else
+                {
+                    m_flows[i]->setLogoFilePath(QString("file:///")+flowLogoFilePath);
+                }
+            }
+
+            saveFlowConfigure(m_flows[i]);
+            break;
+        }
+    }
+
+    return true;
+}
 
 void FlowManager::deleteFlowItem(const QString& id)
 {

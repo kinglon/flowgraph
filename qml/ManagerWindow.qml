@@ -12,6 +12,30 @@ Window {
     height: 600
     title: "流程图管理端"
 
+    function editFlow(flowId) {
+        var flowItem = flowItemComponent.createObject()
+        if (!FlowManager.getFlowItem(flowId, flowItem)) {
+            return
+        }
+
+        var editParam = {
+            title: "编辑",
+            name: flowItem.name,
+            logoPath: flowItem.logoFilePath
+        }
+        var addWindow = addFlowWindowComponent.createObject(managerWindow, editParam)
+        addWindow.okClicked.connect(function() {
+            flowItem.name = addWindow.name
+            flowItem.logoFilePath = addWindow.logoPath
+            if (FlowManager.updateFlowItem(flowItem)) {
+                // 编辑完后，logo路径会变，重新获取
+                if (FlowManager.getFlowItem(flowItem.id, flowItem)) {
+                    gridModel.updateFlowItem(flowItem)
+                }
+            }
+        })
+    }
+
     function packageFlow(flowId) {
         var selectDialog = fileDialogComponent.createObject(managerWindow)
         selectDialog.selectFinish.connect(function(filePath) {
@@ -74,10 +98,18 @@ Window {
 
                         property int fontSize: 15
                         MenuItem {
-                            text: "打包"
+                            text: "编辑"
                             font.pointSize: contextMenu.fontSize
                             onTriggered: {
-                                managerWindow.packageFlow(flowId)
+                                managerWindow.editFlow(flowId)
+                            }
+                        }
+                        MenuItem {
+                            text: "删除"
+                            font.pointSize: contextMenu.fontSize
+                            onTriggered: {
+                                FlowManager.deleteFlowItem(flowId)
+                                gridModel.deleteFlowItem(flowId)
                             }
                         }
                         MenuItem {
@@ -92,11 +124,10 @@ Window {
                             }
                         }
                         MenuItem {
-                            text: "删除"
+                            text: "打包"
                             font.pointSize: contextMenu.fontSize
                             onTriggered: {
-                                FlowManager.deleteFlowItem(flowId)
-                                gridModel.deleteFlowItem(flowId)
+                                managerWindow.packageFlow(flowId)
                             }
                         }
                     }
@@ -207,6 +238,16 @@ Window {
                 var item = gridModel.get(i);
                 if (item.flowId === flowId) {
                     gridModel.remove(i)
+                    break
+                }
+            }
+        }
+
+        function updateFlowItem(flow) {
+            for (var i = 0; i < gridModel.count; i++) {
+                if (gridModel.get(i).flowId === flow.id) {
+                    var item = {isAddButton: false, flowId: flow.id, content: flow.name, iconSource: flow.logoFilePath};
+                    gridModel.set(i, item)
                     break
                 }
             }

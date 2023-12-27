@@ -62,6 +62,8 @@ public:
 
     Q_INVOKABLE void deleteFlowItem(const QString& id);
 
+    Q_INVOKABLE bool updateFlowItem(FlowItem* flowItem);
+
     Q_INVOKABLE QString copyFlowItem(const QString& id);
 
     Q_INVOKABLE void packageFlowItem(const QString& id, const QString& originZipFilePath);
