@@ -419,9 +419,10 @@ QtObject {
             return true
         }
 
-        buildBlockData.submitFiles.forEach(function(filePath) {
+        buildBlockData.submitFiles.forEach(function(submitFile) {
+            var filePath = submitFile.filePath
             var extension = utility.getFileExtension(filePath)
-            var size = utility.getFileSize(filePath)
+            var size = utility.getFileSize(toAbsolutePath(filePath))
             for (var i=0; i<conditions.length; i++) {
                 if (conditions[i].count > 0
                         && conditions[i].suffix === extension

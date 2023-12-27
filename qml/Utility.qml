@@ -24,6 +24,16 @@ QtObject {
       return lowercaseExtension;
     }
 
+    function getFileName(filePath) {
+      const index = filePath.lastIndexOf('\\');
+      if (index === -1) {
+        return filePath
+      }
+
+      const fileName = filePath.substring(index + 1)
+      return fileName
+    }
+
     // 返回指定文件的大小（字节数）
     function getFileSize(filePath) {
         return QmlUtility.getFileSize(filePath)

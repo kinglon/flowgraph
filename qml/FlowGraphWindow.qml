@@ -65,8 +65,9 @@ Window {
             buildBlockCtrl.deleteSubmitFile.connect(function(buildBlockCtrl, filePath) {
                 var buildBlockData = buildBlockManager.getBuildBlockData(buildBlockCtrl.uuid)
                 if (buildBlockData !== null) {
+                    var fileName = utility.getFileName(filePath)
                     buildBlockData.submitFiles = buildBlockData.submitFiles.filter(function(submitFile) {
-                        return submitFile.filePath !== filePath
+                        return submitFile.filePath !== fileName
                     })
                 }
             })
@@ -119,8 +120,8 @@ Window {
                         var askFinishParam = {
                             message: "确定提交所有文件，完成任务？"
                         }
-                        messageBoxComponent.createObject(flowGraphWindow, askFinishParam)
-                        messageBoxComponent.okClicked.connect(function() {
+                        var messageBox = messageBoxComponent.createObject(flowGraphWindow, askFinishParam)
+                        messageBox.okClicked.connect(function() {
                             buildBlockData.finish = true
                         })
                     }
@@ -213,6 +214,8 @@ Window {
         flowId: flowGraphWindow.flowId
         editable: flowGraphWindow.editable
     }
+
+    Utility { id: utility }
 
     WindowBase {
         id: windowBase

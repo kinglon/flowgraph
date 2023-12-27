@@ -127,6 +127,7 @@ BuildBlockBase {
         var fileThumb = childComponent.createObject(lowerRow, params)
         fileThumb.deleteFile.connect(function(filePath) {
             basicBuildBlock.deleteSubmitFile(basicBuildBlock, filePath)
+            fileThumb.visible = false
             fileThumb.destroy()
             updateWidth()
         })
@@ -134,7 +135,15 @@ BuildBlockBase {
     }
 
     function updateWidth() {
-        var childCount = Math.max(upperRow.children.length, lowerRow.children.length+1)
+        // 删除提交文件的时候，不是及时删除，所以不能简单判断子item的数目
+        var lowerRowChildrenCount = 0
+        for (var i=0; i<lowerRow.children.length; i++) {
+            if (lowerRow.children[i].visible) {
+                lowerRowChildrenCount += 1
+            }
+        }
+
+        var childCount = Math.max(upperRow.children.length, lowerRowChildrenCount+1)
         if (childCount <= 1) {
             width = initWidth
         } else {
@@ -146,9 +155,9 @@ BuildBlockBase {
             upperRow.width += (upperRow.children.length-1)*rowSpacing
         }
 
-        lowerRow.width = basicBuildBlock.itemWidth*lowerRow.children.length
-        if (lowerRow.children.length > 1) {
-            lowerRow.width += lowerRow.children.length*rowSpacing
+        lowerRow.width = basicBuildBlock.itemWidth*lowerRowChildrenCount
+        if (lowerRowChildrenCount > 1) {
+            lowerRow.width += lowerRowChildrenCount*rowSpacing
         }
     }
 }
