@@ -239,6 +239,7 @@ Window {
                             verticalAlignment: Text.AlignVCenter
                             font.pointSize: 14
                             inputMethodHints: Qt.ImhDigitsOnly
+                            selectByMouse: true
                         }
 
                         // 时长单位：时
@@ -294,10 +295,13 @@ Window {
                                 anchors.left: suffixText.right
                                 anchors.leftMargin: 5
                                 verticalAlignment: Text.AlignVCenter
-                                text: model.suffix
                                 font.pointSize: 11
+                                selectByMouse: true                                
                                 onTextChanged: {
                                     submitConditionModel.get(index).suffix = text
+                                }
+                                Component.onCompleted: {
+                                    text = model.suffix
                                 }
                             }
 
@@ -321,12 +325,20 @@ Window {
                                 height: parent.height
                                 anchors.left: sizeText.right
                                 anchors.leftMargin: 5
-                                verticalAlignment: Text.AlignVCenter
-                                text: model.sizeMin.toString()
+                                verticalAlignment: Text.AlignVCenter                                
                                 font.pointSize: 11
                                 inputMethodHints: Qt.ImhDigitsOnly
+                                selectByMouse: true
                                 onTextChanged: {
-                                    submitConditionModel.get(index).sizeMin = parseInt(text, 10)
+                                    var value = parseInt(text, 10)
+                                    if (value === NaN) {
+                                        submitConditionModel.get(index).sizeMin = 0
+                                    } else {
+                                        submitConditionModel.get(index).sizeMin = value
+                                    }
+                                }
+                                Component.onCompleted: {
+                                    text = model.sizeMin.toString()
                                 }
                             }
 
@@ -358,12 +370,20 @@ Window {
                                 height: parent.height
                                 anchors.left: toImage.right
                                 anchors.leftMargin: 30
-                                verticalAlignment: Text.AlignVCenter
-                                text: model.sizeMax.toString()
+                                verticalAlignment: Text.AlignVCenter                                
                                 font.pointSize: 11
                                 inputMethodHints: Qt.ImhDigitsOnly
+                                selectByMouse: true                                
                                 onTextChanged: {
-                                    submitConditionModel.get(index).sizeMax = parseInt(text, 10)
+                                    var value = parseInt(text, 10)
+                                    if (value === NaN) {
+                                        submitConditionModel.get(index).sizeMax = 0
+                                    } else {
+                                        submitConditionModel.get(index).sizeMax = value
+                                    }
+                                }
+                                Component.onCompleted: {
+                                    text = model.sizeMax.toString()
                                 }
                             }
 
@@ -398,11 +418,14 @@ Window {
                                 width: 120
                                 height: parent.height
                                 anchors.right: countText.left
-                                verticalAlignment: Text.AlignVCenter
-                                text: model.groupName
+                                verticalAlignment: Text.AlignVCenter                                
                                 font.pointSize: 11
+                                selectByMouse: true
                                 onTextChanged: {
                                     submitConditionModel.get(index).groupName = text
+                                }
+                                Component.onCompleted: {
+                                    text = model.groupName
                                 }
                             }
 
@@ -427,11 +450,19 @@ Window {
                                 anchors.right: deleteBtn.left
                                 anchors.rightMargin: 10
                                 verticalAlignment: Text.AlignVCenter
-                                text: model.count.toString()
                                 font.pointSize: 11
-                                inputMethodHints: Qt.ImhDigitsOnly
+                                selectByMouse: true
+                                inputMethodHints: Qt.ImhDigitsOnly                                
                                 onTextChanged: {
-                                    submitConditionModel.get(index).count = parseInt(text, 10)
+                                    var value = parseInt(text, 10)
+                                    if (value === NaN) {
+                                        submitConditionModel.get(index).count = 0
+                                    } else {
+                                        submitConditionModel.get(index).count = value
+                                    }
+                                }
+                                Component.onCompleted: {
+                                    text = model.count.toString()
                                 }
                             }
 

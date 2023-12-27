@@ -42,7 +42,7 @@ Window {
                 height: parent.height
                 text: "名字"
                 font.pointSize: 14
-                verticalAlignment: Text.AlignVCenter
+                verticalAlignment: Text.AlignVCenter                
             }
 
             TextField {
@@ -51,6 +51,7 @@ Window {
                 height: parent.height
                 font.pointSize: 14
                 text: addFlowWindow.name
+                selectByMouse: true
             }
         }
 

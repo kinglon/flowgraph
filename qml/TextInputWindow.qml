@@ -50,6 +50,7 @@ Window {
                 font.pointSize: 15
                 textMargin: 20
                 inputMethodHints: Qt.ImhMultiLine
+                selectByMouse: true
             }
         }
 
