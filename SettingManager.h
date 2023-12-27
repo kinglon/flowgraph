@@ -22,6 +22,8 @@ public:
 
 	void Save();
 
+    void CreateNewConfigFile(const QString& confFileName, const QString& flowId);
+
 private:
 	void Load();
 

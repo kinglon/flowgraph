@@ -76,6 +76,28 @@ void CSettingManager::Save()
     file.close();
 }
 
+void CSettingManager::CreateNewConfigFile(const QString& confFileName, const QString& flowId)
+{
+    QJsonObject root;
+    root["log_level"] = 2;
+
+    QJsonArray flows;
+    flows.append(flowId);
+    root["flows"] = flows;
+
+    QJsonDocument jsonDocument(root);
+    QByteArray jsonData = jsonDocument.toJson(QJsonDocument::Indented);
+    std::wstring strConfFilePath = CImPath::GetConfPath() + confFileName.toStdWString();
+    QFile file(QString::fromStdWString(strConfFilePath));
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+    {
+        LOG_ERROR(L"failed to open the basic configure file : %s", strConfFilePath.c_str());
+        return;
+    }
+    file.write(jsonData);
+    file.close();
+}
+
 void CSettingManager::SetFlows(const QVector<QString>& flows)
 {
     m_flows = flows;

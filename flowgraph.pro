@@ -15,6 +15,7 @@ SOURCES += \
         Utility/LogBuffer.cpp \
         Utility/LogUtil.cpp \
         main.cpp \
+        packagethread.cpp \
         qmlutility.cpp
 
 RESOURCES += qml.qrc
@@ -40,6 +41,7 @@ HEADERS += \
     Utility/LogBuffer.h \
     Utility/LogMacro.h \
     Utility/LogUtil.h \
+    packagethread.h \
     qmlutility.h
 
 INCLUDEPATH += Utility

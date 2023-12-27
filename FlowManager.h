@@ -5,6 +5,7 @@
 #include <QJsonObject>
 #include <QJsonArray>
 #include <qqml.h>
+#include "packagethread.h"
 
 class FlowItem : public QObject
 {
@@ -63,7 +64,9 @@ public:
 
     Q_INVOKABLE QString copyFlowItem(const QString& id);
 
-    Q_INVOKABLE void packageFlowItem(const QString& id);
+    Q_INVOKABLE void packageFlowItem(const QString& id, const QString& originZipFilePath);
+
+    Q_INVOKABLE void cancelPackage();
 
     Q_INVOKABLE QString getBuildBlocks(const QString& flowId);
 
@@ -76,6 +79,12 @@ public:
 
     // 将filePath拷贝到流程图目录下，返回新文件的绝对路径（包含file:///），拷贝失败返回空串
     Q_INVOKABLE QString copyFile(const QString& flowId, const QString& filePath);
+
+signals:
+    void packageFinish(bool isSuccess);
+
+private slots:
+    void packageThreadFinish();
 
 private:
     void loadFlows();
@@ -90,6 +99,8 @@ private:
     QList<FlowItem*> m_flows;
 
     QMap<QString, QJsonArray> m_flowId2BuildBlocks;
+
+    PackageThread* m_packageThread = nullptr;
 };
 
 #endif // CFLOWMANAGER_H

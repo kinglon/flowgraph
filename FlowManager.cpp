@@ -181,10 +181,50 @@ QString FlowManager::copyFlowItem(const QString& id)
     return flowItem.id();
 }
 
-void FlowManager::packageFlowItem(const QString& id)
+void FlowManager::packageFlowItem(const QString& id, const QString& originZipFilePath)
 {
-    // todo by yejinlong, packageFlowItem
-    (void)id;
+    if (m_packageThread)
+    {
+        qWarning("last package is running");
+        return;
+    }
+
+    FlowItem flowItem;
+    if (!getFlowItem(id, &flowItem))
+    {
+        return;
+    }
+
+    CSettingManager::GetInstance()->CreateNewConfigFile("configs2.json", id);
+
+    QString localOriginZipFilePath = originZipFilePath;
+    QUrl url(originZipFilePath);
+    if (url.isLocalFile())
+    {
+        localOriginZipFilePath = url.toLocalFile();
+    }
+
+    m_packageThread = new PackageThread(this);
+    m_packageThread->m_newZipFileName = flowItem.name()+".zip";
+    m_packageThread->m_originZipFilePath = localOriginZipFilePath;
+    m_packageThread->m_flowId = id;
+    connect(m_packageThread, &PackageThread::finished, this, &FlowManager::packageThreadFinish);
+    m_packageThread->start();
+}
+
+void FlowManager::packageThreadFinish()
+{
+    emit packageFinish(m_packageThread->m_success);
+    m_packageThread->deleteLater();
+    m_packageThread = nullptr;
+}
+
+void FlowManager::cancelPackage()
+{
+    if (m_packageThread)
+    {
+        m_packageThread->m_cancel = true;
+    }
 }
 
 QQmlListProperty<FlowItem> FlowManager::flows()

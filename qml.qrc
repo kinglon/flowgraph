@@ -41,5 +41,6 @@
         <file>qml/MessageBox.qml</file>
         <file>qml/OkBuildBlock.qml</file>
         <file>qml/TextInputWindow.qml</file>
+        <file>qml/WaitingWindow.qml</file>
     </qresource>
 </RCC>

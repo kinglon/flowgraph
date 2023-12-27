@@ -1,6 +1,7 @@
 ﻿import QtQuick 2.15
 import QtQuick.Window 2.15
 import QtQuick.Controls 2.15
+import QtQuick.Dialogs 1.3
 import Flow 1.0
 
 Window {
@@ -10,6 +11,27 @@ Window {
     width: 1200
     height: 600
     title: "流程图管理端"
+
+    function packageFlow(flowId) {
+        var selectDialog = fileDialogComponent.createObject(managerWindow)
+        selectDialog.selectFinish.connect(function(filePath) {
+            var waitingWindowParam = {title: "打包中"}
+            var waitingWindow = waitingWindowComponent.createObject(managerWindow, waitingWindowParam)
+            waitingWindow.closing.connect(function(close) {
+                FlowManager.cancelPackage()
+            })
+
+            FlowManager.packageFinish.connect(function(isSuccess) {
+                waitingWindow.close()
+                var messageBoxParam = {
+                    showCancelButton: false,
+                    message: isSuccess?"打包成功":"打包失败"
+                }
+                messageBoxComponent.createObject(managerWindow, messageBoxParam)
+            })
+            FlowManager.packageFlowItem(flowId, filePath)
+        })
+    }
 
     WindowBase {
         id: windowBase
@@ -55,8 +77,7 @@ Window {
                             text: "打包"
                             font.pointSize: contextMenu.fontSize
                             onTriggered: {
-                                FlowManager.packageFlowItem(flowId)
-                                // todo by yejinlong, 等待提示
+                                managerWindow.packageFlow(flowId)
                             }
                         }
                         MenuItem {
@@ -205,5 +226,30 @@ Window {
     Component {
         id: flowGraphWindowComponent
         FlowGraphWindow {}
+    }
+
+    Component {
+        id: waitingWindowComponent
+        WaitingWindow {}
+    }
+
+    Component {
+        id: messageBoxComponent
+        MessageBox {}
+    }
+
+    Component {
+        id: fileDialogComponent
+        FileDialog {
+            id: fileDialog
+            title: "选择安装包"
+            folder: shortcuts.desktop
+            nameFilters: ["Zip file (*.zip)"]
+            signal selectFinish(string filePath)
+            onAccepted: {
+                var filePath = fileDialog.fileUrl.toString()
+                fileDialog.selectFinish(filePath)
+            }
+        }
     }
 }
