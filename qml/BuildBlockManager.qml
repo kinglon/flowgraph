@@ -213,7 +213,7 @@ QtObject {
                 buildBlockCtrl.canUse = editable || isLastBuildBlockFinish(buildBlockData)
             }
 
-            if (buildBlockData.type === "timer" && buildBlockCtrl.canUse) {
+            if (buildBlockData.type === "timer" && buildBlockCtrl.canUse && !buildBlockData.finish) {
                 if (buildBlockData.beginTime === 0) {
                     buildBlockData.beginTime = Math.floor(Date.now() / 1000)
                 }
@@ -482,21 +482,22 @@ QtObject {
         var now = Math.floor(Date.now() / 1000)
         buildBlocks.forEach(function(buildBlockData) {
             if (buildBlockData.type === "timer"
+                    && !buildBlockData.finish
                     && buildBlockData.beginTime > 0
                     && now - buildBlockData.beginTime > buildBlockData.finishTimeLength*3600) {
                 buildBlockData.beginTime = 0
                 buildBlockData.submitFiles = []
 
-                var conditionGroups = []
+                var conditionGroupNames = []
                 buildBlockData.finishCondition.forEach(function(condition) {
-                    if (!conditionGroups.includes(condition)) {
-                        conditionGroups.push(condition)
+                    if (!conditionGroupNames.includes(condition.groupName)) {
+                        conditionGroupNames.push(condition.groupName)
                     }
                 })
 
-                if (conditionGroups.length > 0) {
-                    var nextIndex = (conditionGroups.indexOf(buildBlockData.finishConditionGroup)+1)%conditionGroups.length
-                    buildBlockData.finishConditionGroup = conditionGroups[nextIndex].groupName
+                if (conditionGroupNames.length > 0) {
+                    var nextIndex = (conditionGroupNames.indexOf(buildBlockData.finishConditionGroup)+1)%conditionGroupNames.length
+                    buildBlockData.finishConditionGroup = conditionGroupNames[nextIndex]
                 }
 
                 updateBuildBlock(buildBlockData)
