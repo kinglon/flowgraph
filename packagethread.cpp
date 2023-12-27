@@ -27,7 +27,7 @@ void PackageThread::run()
     }
 
     QString workDirectory = QCoreApplication::applicationDirPath() + "\\..\\";
-    QString program = "7z\\7z.exe";
+    QString program = workDirectory+"7z\\7z.exe";
 
     // 添加配置文件configs2.json和data目录
     QStringList addParam;
@@ -38,6 +38,11 @@ void PackageThread::run()
     QProcess addProcess;
     addProcess.setWorkingDirectory(workDirectory);
     addProcess.start(program, addParam);
+    if (!addProcess.waitForStarted(-1))
+    {
+        qCritical("failed to start 7z process");
+        return;
+    }
     addProcess.waitForFinished(-1);
     if (addProcess.exitStatus() != QProcess::NormalExit || addProcess.exitCode() != 0)
     {
@@ -57,6 +62,11 @@ void PackageThread::run()
     QProcess delProcess;
     delProcess.setWorkingDirectory(workDirectory);
     delProcess.start(program, delParam);
+    if (!delProcess.waitForStarted(-1))
+    {
+        qCritical("failed to start 7z process");
+        return;
+    }
     delProcess.waitForFinished(-1);
     if (delProcess.exitStatus() != QProcess::NormalExit || delProcess.exitCode() != 0)
     {
@@ -77,6 +87,11 @@ void PackageThread::run()
     QProcess renameProcess;
     renameProcess.setWorkingDirectory(workDirectory);
     renameProcess.start(program, renameParam);
+    if (!renameProcess.waitForStarted(-1))
+    {
+        qCritical("failed to start 7z process");
+        return;
+    }
     renameProcess.waitForFinished(-1);
     if (renameProcess.exitStatus() != QProcess::NormalExit || renameProcess.exitCode() != 0)
     {

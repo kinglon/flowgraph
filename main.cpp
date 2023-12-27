@@ -18,7 +18,7 @@ void logToFile(QtMsgType type, const QMessageLogContext &context, const QString 
         {
             logLevel = ELogLevel::LOG_LEVEL_DEBUG;
         }
-        else if (type == QtMsgType::QtInfoMsg)
+        else if (type == QtMsgType::QtInfoMsg || type == QtMsgType::QtWarningMsg)
         {
             logLevel = ELogLevel::LOG_LEVEL_INFO;
         }

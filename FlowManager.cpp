@@ -290,7 +290,24 @@ void FlowManager::packageFlowItem(const QString& id, const QString& originZipFil
         return;
     }
 
+    // 创建一个新的配置文件，去除编辑权限
     CSettingManager::GetInstance()->CreateNewConfigFile("configs2.json", id);
+
+    // 重置一下状态
+    if (m_flowId2BuildBlocks.contains(id))
+    {
+        QJsonArray& buildBlockDatas = m_flowId2BuildBlocks[id];
+        for (int i=0; i<buildBlockDatas.count(); i++)
+        {
+            QJsonObject buildBlockData = buildBlockDatas[i].toObject();
+            buildBlockData["finish"] = false;
+            buildBlockData["submitFiles"] = QJsonArray();
+            buildBlockData["finishConditionGroup"] = "";
+            buildBlockData["beginTime"] = 0;
+            buildBlockDatas[i] = buildBlockData;
+        }
+        saveFlowConfigure(&flowItem);
+    }
 
     QString localOriginZipFilePath = originZipFilePath;
     QUrl url(originZipFilePath);

@@ -10,8 +10,8 @@ Window {
     modality: Qt.WindowModal
     title: "添加模块"
     width: 1288
-    height: 700
-    // height: 960
+    // height: 700
+    height: 960
 
     // 模块JSON对象
     property var buildBlockData

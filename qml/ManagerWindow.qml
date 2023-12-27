@@ -55,6 +55,7 @@ Window {
             })
             FlowManager.packageFlowItem(flowId, filePath)
         })
+        selectDialog.open()
     }
 
     WindowBase {
