@@ -97,6 +97,8 @@ private:
 
     void deleteDirectory(const QString& dirPath);
 
+    bool copyFolder(const QString& sourceFolder, const QString& destinationFolder);
+
 private:
     QList<FlowItem*> m_flows;
 

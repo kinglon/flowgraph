@@ -238,7 +238,7 @@ Window {
                             anchors.verticalCenter: parent.verticalCenter
                             verticalAlignment: Text.AlignVCenter
                             font.pointSize: 14
-                            inputMethodHints: Qt.ImhDigitsOnly
+                            validator: IntValidator { bottom: 1}
                             selectByMouse: true
                         }
 
@@ -327,13 +327,13 @@ Window {
                                 anchors.leftMargin: 5
                                 verticalAlignment: Text.AlignVCenter                                
                                 font.pointSize: 11
-                                inputMethodHints: Qt.ImhDigitsOnly
+                                validator: IntValidator { bottom: 0}
                                 selectByMouse: true
-                                onTextChanged: {
-                                    var value = parseInt(text, 10)
-                                    if (value === NaN) {
+                                onTextChanged: {                                    
+                                    if (text === "") {
                                         submitConditionModel.get(index).sizeMin = 0
                                     } else {
+                                        var value = parseInt(text, 10)
                                         submitConditionModel.get(index).sizeMin = value
                                     }
                                 }
@@ -372,13 +372,13 @@ Window {
                                 anchors.leftMargin: 30
                                 verticalAlignment: Text.AlignVCenter                                
                                 font.pointSize: 11
-                                inputMethodHints: Qt.ImhDigitsOnly
+                                validator: IntValidator { bottom: 1}
                                 selectByMouse: true                                
                                 onTextChanged: {
-                                    var value = parseInt(text, 10)
-                                    if (value === NaN) {
+                                    if (text === "") {
                                         submitConditionModel.get(index).sizeMax = 0
                                     } else {
+                                        var value = parseInt(text, 10)
                                         submitConditionModel.get(index).sizeMax = value
                                     }
                                 }
@@ -452,12 +452,12 @@ Window {
                                 verticalAlignment: Text.AlignVCenter
                                 font.pointSize: 11
                                 selectByMouse: true
-                                inputMethodHints: Qt.ImhDigitsOnly                                
+                                validator: IntValidator { bottom: 1}
                                 onTextChanged: {
-                                    var value = parseInt(text, 10)
-                                    if (value === NaN) {
+                                    if (text === "") {
                                         submitConditionModel.get(index).count = 0
                                     } else {
+                                        var value = parseInt(text, 10)
                                         submitConditionModel.get(index).count = value
                                     }
                                 }

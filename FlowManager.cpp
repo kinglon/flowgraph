@@ -210,16 +210,69 @@ void FlowManager::deleteDirectory(const QString& dirPath)
     dir.rmdir(dirPath);
 }
 
+bool FlowManager::copyFolder(const QString& sourceFolder, const QString& destinationFolder)
+{
+    QDir sourceDir(sourceFolder);
+    QDir destDir(destinationFolder);
+
+    if (!destDir.exists())
+    {
+        return false;
+    }
+
+    QStringList files = sourceDir.entryList(QDir::Files | QDir::NoDotAndDotDot);
+    foreach (const QString& file, files)
+    {
+        const QString sourceFilePath = sourceDir.filePath(file);
+        const QString destFilePath = destDir.filePath(file);
+        if (!QFile::copy(sourceFilePath, destFilePath))
+        {
+            qCritical() << "Failed to copy file:" << sourceFilePath;
+            return false;
+        }
+    }
+
+    QStringList folders = sourceDir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+    foreach (const QString& folder, folders) {
+        const QString newSourceFolder = sourceDir.filePath(folder);
+        const QString newDestFolder = destDir.filePath(folder);
+        if (!copyFolder(newSourceFolder, newDestFolder))
+            return false;
+    }
+
+    return true;
+}
+
 QString FlowManager::copyFlowItem(const QString& id)
 {
     FlowItem flowItem;
-    if (!getFlowItem(id, &flowItem)) {
+    if (!getFlowItem(id, &flowItem))
+    {
         return "";
     }
 
-    flowItem.setId(getUuid());
-    flowItem.setName(flowItem.name()+"_2");
-    addFlowItem(&flowItem);
+    QString newFlowId = getUuid();
+    QString newName = flowItem.name()+"_2";
+    QString newLogoFilePath = flowItem.logoFilePath().replace(flowItem.id(), newFlowId);
+
+    // 拷贝data目录
+    copyFolder(getFlowDataPath(id), getFlowDataPath(newFlowId));
+
+    if (m_flowId2BuildBlocks.contains(id))
+    {
+        m_flowId2BuildBlocks[newFlowId] = m_flowId2BuildBlocks[id];
+    }
+
+    flowItem.setId(newFlowId);
+    flowItem.setName(newName);
+    flowItem.setLogoFilePath(newLogoFilePath);
+    m_flows.append(new FlowItem(flowItem));
+    saveFlowConfigure(&flowItem);
+
+    // save to setting config
+    QVector<QString> flowIds = CSettingManager::GetInstance()->GetFlows();
+    flowIds.append(flowItem.id());
+    CSettingManager::GetInstance()->SetFlows(flowIds);
     return flowItem.id();
 }
 
@@ -311,7 +364,7 @@ void FlowManager::loadFlow(const QString& flowId)
     QJsonObject root = jsonDocument.object();
 
     FlowItem* item = new FlowItem();
-    item->setId(root["id"].toString());
+    item->setId(flowId);
     item->setName(root["name"].toString());
     QString logoFilePath = QString("file:///") + getFlowDataPath(flowId) + root["logo"].toString();
     item->setLogoFilePath(logoFilePath);
@@ -330,7 +383,6 @@ void FlowManager::loadFlow(const QString& flowId)
 void FlowManager::saveFlowConfigure(FlowItem* flowItem)
 {
     QJsonObject root;
-    root["id"] = flowItem->id();
     root["name"] = flowItem->name();
 
     // 只存文件名

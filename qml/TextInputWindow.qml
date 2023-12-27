@@ -41,16 +41,20 @@ Window {
             anchors.horizontalCenter: parent.horizontalCenter
             color: "white"
 
-            TextEdit {
+            ScrollView {
                 anchors.fill: parent
-                text: content
-                horizontalAlignment: Text.AlignHCenter
-                verticalAlignment: Text.AlignVCenter
-                wrapMode: Text.Wrap
-                font.pointSize: 15
-                textMargin: 20
-                inputMethodHints: Qt.ImhMultiLine
-                selectByMouse: true
+
+                TextArea {
+                    id: textArea
+                    text: content
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                    wrapMode: TextEdit.Wrap
+                    font.pointSize: 15
+                    inputMethodHints: Qt.ImhMultiLine
+                    selectByMouse: true
+                    focus: true
+                }
             }
         }
 
@@ -68,7 +72,7 @@ Window {
                 font.pointSize: 12
                 anchors.left: parent.left
                 onClicked: {
-                    if (text === "") {
+                    if (textArea.text === "") {
                         var messageBoxParam = {
                             message: "内容不能为空",
                             showCancelButton: false
@@ -77,6 +81,7 @@ Window {
                         return
                     }
 
+                    textInputWindow.content = textArea.text
                     okClicked()
                     textInputWindow.close()
                 }
