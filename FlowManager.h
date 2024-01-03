@@ -82,6 +82,10 @@ public:
     // 将filePath拷贝到流程图目录下，返回新文件的绝对路径（包含file:///），拷贝失败返回空串
     Q_INVOKABLE QString copyFile(const QString& flowId, const QString& filePath);
 
+    Q_INVOKABLE QPoint getFlowWindowSize();
+
+    Q_INVOKABLE void setFlowWindowSize(const QPoint& flowWindowSize);
+
 signals:
     void packageFinish(bool isSuccess);
 

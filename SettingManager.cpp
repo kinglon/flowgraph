@@ -38,6 +38,12 @@ void CSettingManager::Load()
     if (root.contains(MANAGER_FLAG_KEY)) {
         m_isManager = true;
     }
+    if (root.contains("flow_window_width")) {
+        m_flowWindowWidth = root["flow_window_width"].toInt();
+    }
+    if (root.contains("flow_window_height")) {
+        m_flowWindowHeight = root["flow_window_height"].toInt();
+    }
 
     m_flows.clear();
     QJsonArray flows = root["flows"].toArray();
@@ -62,6 +68,8 @@ void CSettingManager::Save()
         flows.append(flow);
     }
     root["flows"] = flows;
+    root["flow_window_width"] = m_flowWindowWidth;
+    root["flow_window_height"] = m_flowWindowHeight;
 
     QJsonDocument jsonDocument(root);
     QByteArray jsonData = jsonDocument.toJson(QJsonDocument::Indented);
@@ -101,5 +109,12 @@ void CSettingManager::CreateNewConfigFile(const QString& confFileName, const QSt
 void CSettingManager::SetFlows(const QVector<QString>& flows)
 {
     m_flows = flows;
+    Save();
+}
+
+void CSettingManager::SetFlowWindowSize(QPoint flowWindowSize)
+{
+    m_flowWindowWidth = flowWindowSize.x();
+    m_flowWindowHeight = flowWindowSize.y();
     Save();
 }

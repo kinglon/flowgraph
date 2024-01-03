@@ -19,6 +19,9 @@ Rectangle {
     // 是否有最小化按钮
     property bool hasMinButton: true
 
+    // 是否有最大化按钮
+    property bool hasMaxButton: false
+
     // 是否有LOGO
     property bool hasLogo: true
 
@@ -26,6 +29,26 @@ Rectangle {
     property alias contentArea: contentArea
     
     property color bgColor: "#B4BECD"
+
+    // 标志是否可以拖动边框改变窗口大小
+    property bool resizable: false
+
+    // 窗口最小宽度，拉动时不低于该值
+    property int minWidth: 350
+
+    Component.onCompleted: {
+        // 居中显示窗口在屏幕上
+        if (windowArea.window != null) {
+            windowArea.window.x = (Screen.desktopAvailableWidth-windowArea.window.width)/2
+            if (windowArea.window.x < 0) {
+                windowArea.window.x = 0
+            }
+            windowArea.window.y = (Screen.desktopAvailableHeight-windowArea.window.height)/2
+            if (windowArea.window.y < 0) {
+                windowArea.window.y = 0
+            }
+        }
+    }
 
     Column {
         width: parent.width-2*windowArea.border.width
@@ -93,13 +116,37 @@ Rectangle {
                 bottomInset: 4
                 leftInset: 4
                 rightInset: 4
-                anchors.right: closeBtn.left
+                anchors.right: hasMaxButton?maxBtn.left:closeBtn.left
                 anchors.rightMargin: 6
                 icon.source: "../res/minimize_button.png"
 
                 onClicked: {
                     if (window != null) {
                         window.visibility = Window.Minimized
+                    }
+                }
+            }
+
+            ButtonBase {
+                id: maxBtn
+                visible: hasMaxButton
+                width: height
+                height: parent.height
+                topInset: 4
+                bottomInset: 4
+                leftInset: 4
+                rightInset: 4
+                anchors.right: closeBtn.left
+                anchors.rightMargin: 6
+                icon.source: window.visibility===Window.Maximized?"../res/restore_button.png":"../res/max_button.png"
+                icon.width: 16
+                icon.height: 16
+
+                onClicked: {
+                    if (window.visibility===Window.Maximized) {
+                        window.showNormal()
+                    } else {
+                        window.visibility = Window.Maximized
                     }
                 }
             }
@@ -132,16 +179,268 @@ Rectangle {
         }
     }
 
-    Component.onCompleted: {
-        // 居中显示窗口在屏幕上
-        if (windowArea.window != null) {
-            windowArea.window.x = (Screen.desktopAvailableWidth-windowArea.window.width)/2
-            if (windowArea.window.x < 0) {
-                windowArea.window.x = 0
+    // 上边框可拖动改变大小
+    MouseArea {
+        width: parent.width
+        height: border.width
+        anchors.top: parent.top
+        visible: resizable && window.visibility!==Window.Maximized
+        z: 2
+        cursorShape: Qt.SizeVerCursor
+        acceptedButtons: Qt.LeftButton
+        property point clickPos: Qt.point(1,1)
+
+        onPressed: {
+            if (mouse.button == Qt.LeftButton) {
+                clickPos  = Qt.point(mouse.x,mouse.y);
             }
-            windowArea.window.y = (Screen.desktopAvailableHeight-windowArea.window.height)/2
-            if (windowArea.window.y < 0) {
-                windowArea.window.y = 0
+        }
+
+        onPositionChanged: {
+            if (mouse.buttons == Qt.LeftButton) {
+                var delta = Qt.point(mouse.x-clickPos.x, mouse.y-clickPos.y);
+                if (window != null) {
+                    var newHeight = window.height - delta.y
+                    if (newHeight > titleBar.height) {
+                        window.height = newHeight
+                        window.y += delta.y
+                    }
+                }
+            }
+        }
+    }
+
+    // 下边框可拖动改变大小
+    MouseArea {
+        width: parent.width
+        height: border.width
+        anchors.bottom: parent.bottom
+        visible: resizable && window.visibility!==Window.Maximized
+        z: 2
+        cursorShape: Qt.SizeVerCursor
+        acceptedButtons: Qt.LeftButton
+        property point clickPos: Qt.point(1,1)
+
+        onPressed: {
+            if (mouse.button == Qt.LeftButton) {
+                clickPos  = Qt.point(mouse.x,mouse.y);
+            }
+        }
+
+        onPositionChanged: {
+            if (mouse.buttons == Qt.LeftButton) {
+                var delta = Qt.point(mouse.x-clickPos.x, mouse.y-clickPos.y);
+                if (window != null) {
+                    var newHeight = window.height + delta.y
+                    if (newHeight > titleBar.height) {
+                        window.height = newHeight
+                    }
+                }
+            }
+        }
+    }
+
+    // 左边框可拖动改变大小
+    MouseArea {
+        width: border.width
+        height: parent.height
+        anchors.left: parent.left
+        visible: resizable && window.visibility!==Window.Maximized
+        z: 2
+        cursorShape: Qt.SizeHorCursor
+        acceptedButtons: Qt.LeftButton
+        property point clickPos: Qt.point(1,1)
+
+        onPressed: {
+            if (mouse.button == Qt.LeftButton) {
+                clickPos  = Qt.point(mouse.x,mouse.y);
+            }
+        }
+
+        onPositionChanged: {
+            if (mouse.buttons == Qt.LeftButton) {
+                var delta = Qt.point(mouse.x-clickPos.x, mouse.y-clickPos.y);
+                if (window != null) {
+                    var newWidth = window.width - delta.x
+                    if (newWidth > windowArea.minWidth) {
+                        window.width = newWidth
+                        window.x += delta.x
+                    }
+                }
+            }
+        }
+    }
+
+    // 右边框可拖动改变大小
+    MouseArea {
+        width: border.width
+        height: parent.height
+        anchors.right: parent.right
+        visible: resizable && window.visibility!==Window.Maximized
+        z: 2
+        cursorShape: Qt.SizeHorCursor
+        acceptedButtons: Qt.LeftButton
+        property point clickPos: Qt.point(1,1)
+
+        onPressed: {
+            if (mouse.button == Qt.LeftButton) {
+                clickPos  = Qt.point(mouse.x,mouse.y);
+            }
+        }
+
+        onPositionChanged: {
+            if (mouse.buttons == Qt.LeftButton) {
+                var delta = Qt.point(mouse.x-clickPos.x, mouse.y-clickPos.y);
+                if (window != null) {
+                    var newWidth = window.width + delta.x
+                    if (newWidth > windowArea.minWidth) {
+                        window.width = newWidth
+                    }
+                }
+            }
+        }
+    }
+
+    // 左上角可拖动改变大小
+    MouseArea {
+        width: border.width
+        height: border.width
+        anchors.top: parent.top
+        anchors.left: parent.left
+        visible: resizable && window.visibility!==Window.Maximized
+        z: 2
+        cursorShape: Qt.SizeFDiagCursor
+        acceptedButtons: Qt.LeftButton
+        property point clickPos: Qt.point(1,1)
+
+        onPressed: {
+            if (mouse.button == Qt.LeftButton) {
+                clickPos  = Qt.point(mouse.x,mouse.y);
+            }
+        }
+
+        onPositionChanged: {
+            if (mouse.buttons == Qt.LeftButton) {
+                var delta = Qt.point(mouse.x-clickPos.x, mouse.y-clickPos.y);
+                if (window != null) {
+                    var newWidth = window.width - delta.x
+                    var newHeight = window.height - delta.y
+                    if (newWidth > windowArea.minWidth) {
+                        window.width = newWidth
+                        window.x += delta.x
+                    }
+                    if (newHeight > titleBar.height) {
+                        window.height = newHeight
+                        window.y += delta.y
+                    }
+                }
+            }
+        }
+    }
+
+    // 右下角可拖动改变大小
+    MouseArea {
+        width: border.width
+        height: border.width
+        anchors.bottom: parent.bottom
+        anchors.right: parent.right
+        visible: resizable && window.visibility!==Window.Maximized
+        z: 2
+        cursorShape: Qt.SizeFDiagCursor
+        acceptedButtons: Qt.LeftButton
+        property point clickPos: Qt.point(1,1)
+
+        onPressed: {
+            if (mouse.button == Qt.LeftButton) {
+                clickPos  = Qt.point(mouse.x,mouse.y);
+            }
+        }
+
+        onPositionChanged: {
+            if (mouse.buttons == Qt.LeftButton) {
+                var delta = Qt.point(mouse.x-clickPos.x, mouse.y-clickPos.y);
+                if (window != null) {
+                    var newWidth = window.width + delta.x
+                    var newHeight = window.height + delta.y
+                    if (newWidth > windowArea.minWidth) {
+                        window.width = newWidth
+                    }
+                    if (newHeight > titleBar.height) {
+                        window.height = newHeight
+                    }
+                }
+            }
+        }
+    }
+
+    // 左下角可拖动改变大小
+    MouseArea {
+        width: border.width
+        height: border.width
+        anchors.bottom: parent.bottom
+        anchors.left: parent.left
+        visible: resizable && window.visibility!==Window.Maximized
+        z: 2
+        cursorShape: Qt.SizeBDiagCursor
+        acceptedButtons: Qt.LeftButton
+        property point clickPos: Qt.point(1,1)
+
+        onPressed: {
+            if (mouse.button == Qt.LeftButton) {
+                clickPos  = Qt.point(mouse.x,mouse.y);
+            }
+        }
+
+        onPositionChanged: {
+            if (mouse.buttons == Qt.LeftButton) {
+                var delta = Qt.point(mouse.x-clickPos.x, mouse.y-clickPos.y);
+                if (window != null) {
+                    var newWidth = window.width - delta.x
+                    var newHeight = window.height + delta.y
+                    if (newWidth > windowArea.minWidth) {
+                        window.width = newWidth
+                        window.x += delta.x
+                    }
+                    if (newHeight > titleBar.height) {
+                        window.height = newHeight
+                    }
+                }
+            }
+        }
+    }
+
+    // 右上角可拖动改变大小
+    MouseArea {
+        width: border.width
+        height: border.width
+        anchors.top: parent.top
+        anchors.right: parent.right
+        visible: resizable && window.visibility!==Window.Maximized
+        z: 2
+        cursorShape: Qt.SizeBDiagCursor
+        acceptedButtons: Qt.LeftButton
+        property point clickPos: Qt.point(1,1)
+
+        onPressed: {
+            if (mouse.button == Qt.LeftButton) {
+                clickPos  = Qt.point(mouse.x,mouse.y);
+            }
+        }
+
+        onPositionChanged: {
+            if (mouse.buttons == Qt.LeftButton) {
+                var delta = Qt.point(mouse.x-clickPos.x, mouse.y-clickPos.y);
+                if (window != null) {
+                    var newWidth = window.width + delta.x
+                    var newHeight = window.height - delta.y
+                    if (newWidth > windowArea.minWidth) {
+                        window.width = newWidth
+                    }
+                    if (newHeight > titleBar.height) {
+                        window.height = newHeight
+                        window.y += delta.y
+                    }
+                }
             }
         }
     }

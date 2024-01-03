@@ -88,7 +88,7 @@ Rectangle {
         }
 
         onPositionChanged: {
-            if (mouse.buttons == Qt.LeftButton) {
+            if (mouse.buttons == Qt.LeftButton) {                
                 var delta = Qt.point(mouse.x-clickPos.x, mouse.y-clickPos.y);
                 buildBlockBase.x += delta.x;
                 buildBlockBase.y += delta.y;

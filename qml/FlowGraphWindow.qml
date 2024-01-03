@@ -8,28 +8,28 @@ Window {
     id: flowGraphWindow
     flags: Qt.Window|Qt.FramelessWindowHint|Qt.WindowMinimizeButtonHint|Qt.WindowMaximizeButtonHint
     visible: true
-    visibility: Window.Maximized
     title: "流程图"
-    width: 800
-    height: 600
     property bool editable: false
     property string flowId: ''
     property var managerWindow: null    
 
     onClosing: {
+        var windowSize = Qt.point(flowGraphWindow.width, flowGraphWindow.height)
+        FlowManager.setFlowWindowSize(windowSize)
+
         buildBlockManager.saveFlowGraph()
         if (managerWindow !== null) {
             managerWindow.show()
         }
     }
 
-    onVisibilityChanged: {
-        if (flowGraphWindow.visibility == Window.Windowed) {
-            flowGraphWindow.visibility = Window.Maximized
-        }
-    }
+    onVisibilityChanged: {}
 
     Component.onCompleted: {
+        var windowSize = FlowManager.getFlowWindowSize()
+        flowGraphWindow.width = windowSize.x
+        flowGraphWindow.height = windowSize.y
+
         if (flowGraphWindow.flowId === "") {
             flowGraphWindow.flowId = FlowManager.flows[0].id
         }
@@ -198,17 +198,6 @@ Window {
         buildBlockManager.createBuildBlockConnectionV2(mouseMovingArrowLine.beginPoint, mouseMovingArrowLine.endPoint, contentPanel.contentItem)
     }
 
-    function onTimer() {
-        // 调整画布大小
-        var size = buildBlockManager.calculateBuildBlockContainerSize()
-        if (size.x > contentPanel.contentWidth) {
-            contentPanel.contentWidth = size.x
-        }
-        if (size.y > contentPanel.contentHeight) {
-            contentPanel.contentHeight = size.y
-        }
-    }
-
     BuildBlockManager {
         id: buildBlockManager
         flowId: flowGraphWindow.flowId
@@ -221,6 +210,8 @@ Window {
         id: windowBase
         window: flowGraphWindow
         title: flowGraphWindow.title
+        resizable: true
+        hasMaxButton: true
         Flickable {
             id: contentPanel
             parent: windowBase.contentArea
@@ -231,6 +222,15 @@ Window {
             boundsMovement: Flickable.StopAtBounds
             boundsBehavior: Flickable.StopAtBounds
             interactive: false
+
+            onWidthChanged: { updateContentSize() }
+            onHeightChanged: { updateContentSize() }
+
+            function updateContentSize() {
+                var size = buildBlockManager.calculateBuildBlockContainerSize()
+                contentPanel.contentWidth = Math.max(contentPanel.width, size.x, contentPanel.contentWidth)
+                contentPanel.contentHeight = Math.max(contentPanel.height, size.y, contentPanel.contentHeight)
+            }
 
             ScrollBar.horizontal: ScrollBar {
                 active: true
@@ -337,8 +337,8 @@ Window {
         repeat: true // Repeat the timer indefinitely
 
         onTriggered: {
+            contentPanel.updateContentSize()
             buildBlockManager.onTimer()
-            flowGraphWindow.onTimer()
         }
     }
 }

@@ -529,3 +529,13 @@ QString FlowManager::copyFile(const QString& flowId, const QString& filePath)
 
     return QString("file:///")+newFilePath;
 }
+
+QPoint FlowManager::getFlowWindowSize()
+{
+    return CSettingManager::GetInstance()->GetFlowWindowSize();
+}
+
+void FlowManager::setFlowWindowSize(const QPoint& flowWindowSize)
+{
+    CSettingManager::GetInstance()->SetFlowWindowSize(flowWindowSize);
+}
