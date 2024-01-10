@@ -300,7 +300,10 @@ void FlowManager::packageFlowItem(const QString& id, const QString& originZipFil
         for (int i=0; i<buildBlockDatas.count(); i++)
         {
             QJsonObject buildBlockData = buildBlockDatas[i].toObject();
-            buildBlockData["finish"] = false;
+            if (buildBlockData["type"].toString() != "text")
+            {
+                buildBlockData["finish"] = false;
+            }
             buildBlockData["submitFiles"] = QJsonArray();
             buildBlockData["finishConditionGroup"] = "";
             buildBlockData["beginTime"] = 0;

@@ -267,9 +267,9 @@ QtObject {
 
         // 修改模块的前后模块关系
         buildBlocks.forEach(function(item){
-            if (item.next === buildBlockId) {
-                item.next = ""
-            }
+            item.next = item.next.filter(function(nextUuid){
+                return nextUuid !== buildBlockId
+            })
             item.last = item.last.filter(function(lastUuid){
                 return lastUuid !== buildBlockId
             })
@@ -294,12 +294,15 @@ QtObject {
 
         // 修改模块的前后模块关系
         buildBlocks.forEach(function(item){
-            if (item.next === buildBlockId) {
-                item.next = ""
+            if (item.uuid === buildBlockId) {
+                // 清空自己模块的next
+                item.next = []
             }
-            item.last = item.last.filter(function(lastUuid){
-                return lastUuid !== buildBlockId
-            })
+            else {
+                item.last = item.last.filter(function(lastUuid){
+                    return lastUuid !== buildBlockId
+                })
+            }
         })
     }
 
@@ -327,6 +330,22 @@ QtObject {
         }
     }
 
+    // 判断2个模块是否连接
+    function isBuildBlockConnected(beginBuildBlockData, buildBlockId) {
+        if (beginBuildBlockData.next.indexOf(buildBlockId) !== -1) {
+            return true
+        }
+
+        for (var i=0; i<beginBuildBlockData.next.length; i++) {
+            var blockData = getBuildBlockData(beginBuildBlockData.next[i])
+            if (blockData !== null && isBuildBlockConnected(blockData, buildBlockId)) {
+                return true
+            }
+        }
+
+        return false
+    }
+
     function createBuildBlockConnectionV2(beginPoint, endPoint, parent) {
         var beginBuildBlockData = null
         var endBuildBlockData = null
@@ -350,15 +369,22 @@ QtObject {
             return
         }
 
+        // 自己不能连自己
         if (beginBuildBlockData.uuid === endBuildBlockData.uuid) {
             return
         }
 
-        if (beginBuildBlockData.next !== "") {
+        // 已经连过，不能再连
+        if (beginBuildBlockData.next.indexOf(endBuildBlockData.uuid) !== -1) {
             return
         }
 
-        beginBuildBlockData.next = endBuildBlockData.uuid
+        // 不能循环连接
+        if (isBuildBlockConnected(endBuildBlockData, beginBuildBlockData.uuid)) {
+            return
+        }
+
+        beginBuildBlockData.next.push(endBuildBlockData.uuid)
         endBuildBlockData.last.push(beginBuildBlockData.uuid)
         var params = {beginBuildBlock: beginBuildBlockCtrl, endBuildBlock: endBuildBlockCtrl}
         var connection = buildBlockConnectionComponent.createObject(parent, params)        
@@ -373,7 +399,7 @@ QtObject {
                             "y": 0,
                             "type": "",
                             "last": [],
-                            "next": "",
+                            "next": [],
                             "finish": false,
                             "text": "",
                             "studyFiles": [],

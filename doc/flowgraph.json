@@ -9,7 +9,7 @@
             "y": 20,
             "type": "text|basic|timer",
             "last": ["12144343434"],
-            "next": "1231231231",
+            "next": ["1231231231"],
             "finish": false,
             "text": "text类型的文本",
             "studyFiles": ["filePath": "文件名，在流程图数据目录下，如1.png"],
