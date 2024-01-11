@@ -432,6 +432,60 @@ QtObject {
         buildBlockData.submitFiles.push({icon: iconFileName, filePath: fileName})
     }
 
+    // 检查提交的文件是否满足条件，submittingFile是绝对路径
+    function isSubmitFileSatisfyCondition(buildBlockData, submittingFile) {
+        var conditions = []
+        buildBlockData.finishCondition.forEach(function(condition){
+            if (condition.groupName === buildBlockData.finishConditionGroup) {
+                conditions.push(utility.deepCopy(condition))
+            }
+        })
+
+        if (conditions.length === 0) {
+            return false
+        }
+
+        // 检查是否满足条件
+        var satisfy = false
+        var extension = utility.getFileExtension(submittingFile)
+        var size = utility.getFileSize(submittingFile)
+        for (var i=0; i<conditions.length; i++) {
+            if (conditions[i].suffix === extension
+                    && size >= conditions[i].sizeMin*1024*1024
+                    && size <= conditions[i].sizeMax*1024*1024) {
+                satisfy = true
+                conditions[i].count -= 1
+                break
+            }
+        }
+        if (!satisfy) {
+            return false
+        }
+
+        // 检查个数是否已经超过
+        buildBlockData.submitFiles.forEach(function(submitFile) {
+            var filePath = submitFile.filePath
+            var extension = utility.getFileExtension(filePath)
+            var size = utility.getFileSize(toAbsolutePath(filePath))
+            for (var i=0; i<conditions.length; i++) {
+                if (conditions[i].suffix === extension
+                        && size >= conditions[i].sizeMin*1024*1024
+                        && size <= conditions[i].sizeMax*1024*1024) {
+                    conditions[i].count -= 1
+                    break
+                }
+            }
+        })
+
+        for (i=0; i<conditions.length; i++) {
+            if (conditions[i].count < 0) {
+                return false
+            }
+        }
+
+        return true
+    }
+
     // 检查提交的文件是否已经满足完成条件
     function checkIfFinish(buildBlockData) {
         var conditions = []

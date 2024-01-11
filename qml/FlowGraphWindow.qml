@@ -108,6 +108,15 @@ Window {
             } else {
                 var fileDialog = fileDialogComponent.createObject(flowGraphWindow)
                 fileDialog.selectFileFinish.connect(function(filePath) {
+                    if (!buildBlockManager.isSubmitFileSatisfyCondition(buildBlockData, filePath)) {
+                        var notSatisfyParam = {
+                            message: "提交的文件不符合规范",
+                            showCancelButton: false
+                        }
+                        messageBoxComponent.createObject(flowGraphWindow, notSatisfyParam)
+                        return
+                    }
+
                     var newFilePath = buildBlockManager.copyFile(filePath)
                     if (newFilePath === "") {
                         return
